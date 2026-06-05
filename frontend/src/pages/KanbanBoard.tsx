@@ -2,28 +2,28 @@ import { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useApi } from '../hooks/useApi';
 import { api } from '../services/api';
-import { Fault, FaultStatus, STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS } from '../types';
-import { LoadingSpinner, Modal, StatusBadge } from '../components/ui/Common';
-import { Plus, AlertTriangle, Clock, User, Wrench } from 'lucide-react';
+import { Fault, FaultStatus, STATUS_LABELS, PRIORITY_LABELS } from '../types';
+import { LoadingSpinner, Modal, StatusBadge, PageHeader } from '../components/ui/Common';
+import { Plus, Clock, Wrench, GripVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const columns: FaultStatus[] = ['submitted', 'analysis', 'inspection', 'validation', 'manufacturing', 'delivery', 'closed'];
 
-const columnColors: Record<FaultStatus, string> = {
-  submitted: 'border-t-blue-500',
-  analysis: 'border-t-purple-500',
-  inspection: 'border-t-amber-500',
-  validation: 'border-t-cyan-500',
-  manufacturing: 'border-t-orange-500',
-  delivery: 'border-t-indigo-500',
-  closed: 'border-t-green-500',
+const columnGradients: Record<FaultStatus, string> = {
+  submitted: 'from-blue-600/20 to-blue-950/20 border-blue-500/20',
+  analysis: 'from-purple-600/20 to-purple-950/20 border-purple-500/20',
+  inspection: 'from-amber-600/20 to-amber-950/20 border-amber-500/20',
+  validation: 'from-cyan-600/20 to-cyan-950/20 border-cyan-500/20',
+  manufacturing: 'from-orange-600/20 to-orange-950/20 border-orange-500/20',
+  delivery: 'from-indigo-600/20 to-indigo-950/20 border-indigo-500/20',
+  closed: 'from-green-600/20 to-green-950/20 border-green-500/20',
 };
 
-const priorityIcon: Record<string, string> = {
-  low: 'bg-green-500',
-  medium: 'bg-yellow-500',
-  high: 'bg-orange-500',
-  critical: 'bg-red-500',
+const priorityBorders: Record<string, string> = {
+  critical: 'border-l-red-500',
+  high: 'border-l-orange-500',
+  medium: 'border-l-yellow-500',
+  low: 'border-l-green-500',
 };
 
 export default function KanbanBoard() {
@@ -31,21 +31,17 @@ export default function KanbanBoard() {
   const { data: equipment } = useApi<any[]>(() => api.equipment.list());
   const [columnsData, setColumnsData] = useState<Record<string, Fault[]>>({});
   const [showModal, setShowModal] = useState(false);
-  const [updating, setUpdating] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!faults) return;
     const grouped: Record<string, Fault[]> = {};
-    for (const col of columns) {
-      grouped[col] = faults.filter(f => f.status === col);
-    }
+    for (const col of columns) grouped[col] = faults.filter(f => f.status === col);
     setColumnsData(grouped);
   }, [faults]);
 
   async function handleDragEnd(result: DropResult) {
     if (!result.destination || result.destination.droppableId === result.source.droppableId) return;
-
     const sourceCol = result.source.droppableId;
     const destCol = result.destination.droppableId as FaultStatus;
     const faultId = result.draggableId;
@@ -55,45 +51,38 @@ export default function KanbanBoard() {
     const destItems = [...(newColumns[destCol] || [])];
     const [moved] = sourceItems.splice(result.source.index, 1);
     if (!moved) return;
-
     moved.status = destCol;
     destItems.splice(result.destination.index, 0, moved);
     newColumns[sourceCol] = sourceItems;
     newColumns[destCol] = destItems;
     setColumnsData(newColumns);
 
-    setUpdating(true);
-    try {
-      await api.faults.updateStatus(faultId, destCol);
-    } catch (err) {
-      refetch();
-    } finally {
-      setUpdating(false);
-    }
+    try { await api.faults.updateStatus(faultId, destCol); }
+    catch { refetch(); }
   }
 
   if (loading) return <LoadingSpinner />;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Tableau Kanban</h1>
-          <p className="text-sm text-slate-400 mt-1">Glissez-déposez les pannes pour suivre le workflow</p>
-        </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary">
-          <Plus className="w-4 h-4" /> Nouvelle panne
-        </button>
-      </div>
+      <PageHeader
+        title="Tableau Kanban"
+        description="Glissez-déposez les pannes pour suivre le workflow"
+        action={
+          <button onClick={() => setShowModal(true)} className="btn-primary shadow-lg shadow-brand-500/20">
+            <Plus className="w-4 h-4" /> Nouvelle panne
+          </button>
+        }
+      />
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="flex gap-4 overflow-x-auto pb-4" style={{ minHeight: 'calc(100vh - 200px)' }}>
+        <div className="flex gap-5 overflow-x-auto pb-6" style={{ minHeight: 'calc(100vh - 200px)' }}>
           {columns.map(col => (
-            <div key={col} className="flex-shrink-0 w-72">
-              <div className={`rounded-t-xl border-t-2 ${columnColors[col]} bg-slate-900/80 border-x border-slate-800 pt-3 px-3`}>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-white">{STATUS_LABELS[col]}</h3>
-                  <span className="text-xs text-slate-500 bg-slate-800 rounded-full px-2 py-0.5">
+            <div key={col} className="flex-shrink-0 w-80">
+              <div className={`rounded-t-2xl bg-gradient-to-b ${columnGradients[col]} border-t-2 border-x px-4 pt-4 pb-3`}>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-white tracking-wide">{STATUS_LABELS[col]}</h3>
+                  <span className="text-xs font-bold text-slate-400 bg-slate-800/80 rounded-full px-2.5 py-1 border border-slate-700/50">
                     {(columnsData[col] || []).length}
                   </span>
                 </div>
@@ -103,10 +92,10 @@ export default function KanbanBoard() {
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className={`bg-slate-900/60 border-x border-b border-slate-800 p-3 space-y-3 min-h-[200px] transition-colors ${
+                    className={`bg-slate-900/40 border-x border-b border-slate-800/50 p-4 space-y-3 min-h-[200px] transition-all duration-200 ${
                       snapshot.isDraggingOver ? 'bg-brand-900/20' : ''
                     }`}
-                    style={{ borderBottomLeftRadius: '0.75rem', borderBottomRightRadius: '0.75rem' }}
+                    style={{ borderBottomLeftRadius: '1rem', borderBottomRightRadius: '1rem' }}
                   >
                     {(columnsData[col] || []).map((fault, index) => (
                       <Draggable key={fault.id} draggableId={fault.id} index={index}>
@@ -116,25 +105,31 @@ export default function KanbanBoard() {
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
                             onClick={() => navigate(`/faults/${fault.id}`)}
-                            className={`card p-4 cursor-grab active:cursor-grabbing ${
-                              snapshot.isDragging ? 'shadow-xl shadow-brand-600/20 border-brand-600/50' : ''
-                            }`}
+                            className={`group cursor-grab active:cursor-grabbing rounded-xl border bg-slate-800/30 backdrop-blur-sm transition-all duration-200 ${
+                              snapshot.isDragging
+                                ? 'shadow-2xl shadow-brand-600/30 border-brand-500/50 scale-[1.02] rotate-[1deg]'
+                                : 'border-slate-700/30 hover:border-slate-600/50 hover:bg-slate-800/50'
+                            } ${priorityBorders[fault.priority] || 'border-l-slate-600'} border-l-4`}
+                            style={{ padding: '16px' }}
                           >
-                            <div className="flex items-start justify-between mb-2">
-                              <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${priorityIcon[fault.priority] || 'bg-slate-500'}`} />
+                            <div className="flex items-start justify-between mb-2.5">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <GripVertical className="w-3.5 h-3.5 text-slate-600 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <h4 className="text-sm font-bold text-white truncate">{fault.title}</h4>
+                              </div>
                               <StatusBadge status={fault.priority} labels={PRIORITY_LABELS} />
                             </div>
-                            <h4 className="text-sm font-medium text-white mb-1 line-clamp-2">{fault.title}</h4>
                             {fault.equipment_name && (
-                              <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                              <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-2 ml-5">
                                 <Wrench className="w-3 h-3" /> {fault.equipment_name}
                               </p>
                             )}
-                            <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-800">
-                              <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                            <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-800/50">
+                              <span className="text-[10px] text-slate-600 font-medium flex items-center gap-1.5">
                                 <Clock className="w-3 h-3" />
                                 {new Date(fault.created_at).toLocaleDateString('fr-FR')}
                               </span>
+                              <div className={`w-1.5 h-1.5 rounded-full ${fault.priority === 'critical' ? 'bg-red-500 animate-pulse' : fault.priority === 'high' ? 'bg-orange-500' : fault.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}`} />
                             </div>
                           </div>
                         )}
@@ -142,7 +137,7 @@ export default function KanbanBoard() {
                     ))}
                     {provided.placeholder}
                     {(columnsData[col] || []).length === 0 && (
-                      <p className="text-xs text-slate-600 text-center py-8">Aucune panne</p>
+                      <p className="text-xs text-slate-700 text-center py-10 font-medium">Aucune panne</p>
                     )}
                   </div>
                 )}
@@ -161,33 +156,27 @@ export default function KanbanBoard() {
 
 function FaultForm({ onDone, equipment }: { onDone: () => void; equipment: any[] }) {
   const [form, setForm] = useState({ equipment_id: '', title: '', description: '', priority: 'medium' });
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    try {
-      await api.faults.create(form);
-      onDone();
-    } catch (err: any) {
-      alert(err.message);
-    }
+    try { await api.faults.create(form); onDone(); }
+    catch (err: any) { alert(err.message); }
   }
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label className="label">Équipement *</label>
+        <label className="label">Équipement</label>
         <select className="input" required value={form.equipment_id} onChange={e => setForm(f => ({ ...f, equipment_id: e.target.value }))}>
           <option value="">Sélectionner...</option>
           {equipment.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
         </select>
       </div>
       <div>
-        <label className="label">Titre *</label>
-        <input className="input" required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
+        <label className="label">Titre</label>
+        <input className="input" required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Fuite d'huile compresseur" />
       </div>
       <div>
-        <label className="label">Description *</label>
-        <textarea className="input" rows={3} required value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+        <label className="label">Description</label>
+        <textarea className="input" rows={4} required value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Décrivez le problème..." />
       </div>
       <div>
         <label className="label">Priorité</label>

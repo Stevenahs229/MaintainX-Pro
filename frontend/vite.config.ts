@@ -7,7 +7,7 @@ export default defineConfig({
     react({ tsDecorators: false }),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
       manifest: {
         name: 'MaintainX Pro',
         short_name: 'MaintainX',
