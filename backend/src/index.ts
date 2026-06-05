@@ -1,6 +1,8 @@
+import path from 'path';
 import express from 'express';
 import cors from 'cors';
-import { initDb } from './database.js';
+import { initDb, queryOne } from './database.js';
+import { seed } from './seed.js';
 import authRoutes from './routes/auth.js';
 import equipmentRoutes from './routes/equipment.js';
 import faultRoutes from './routes/faults.js';
@@ -27,8 +29,18 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+const frontendDist = path.resolve('../frontend/dist');
+app.use(express.static(frontendDist));
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(frontendDist, 'index.html'));
+});
+
 async function start() {
   await initDb();
+  const userCount = queryOne('SELECT COUNT(*) as count FROM users') as any;
+  if (userCount.count === 0) {
+    await seed();
+  }
   console.log('Database initialized');
   app.listen(PORT, () => {
     console.log(`MaintainX Pro API running on http://localhost:${PORT}`);

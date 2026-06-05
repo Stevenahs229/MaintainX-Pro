@@ -8,7 +8,7 @@ function hashPassword(password: string): string {
   return salt + ':' + derivedKey.toString('hex');
 }
 
-async function seed() {
+export async function seed() {
   await initDb();
 
   const existing = queryOne('SELECT COUNT(*) as count FROM users') as any;
@@ -96,4 +96,6 @@ async function seed() {
   console.log('Technician: thomas@maintainx.com / thomas123');
 }
 
-seed().catch(console.error);
+if (process.argv[1] && (process.argv[1].endsWith('seed.ts') || process.argv[1].endsWith('seed.js'))) {
+  seed().catch(console.error);
+}
