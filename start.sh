@@ -19,24 +19,24 @@ trap cleanup SIGINT SIGTERM
 echo "🔧 MaintainX Pro — Démarrage..."
 
 # Backend
-if [ -f "$PROJECT_DIR/backend/node_modules/.bin/tsx" ]; then
-  echo "📦 Démarrage du backend (port 3001)..."
-  cd "$PROJECT_DIR/backend"
-  node_modules/.bin/tsx src/index.ts &
-  BACKEND_PID=$!
-else
-  echo "❌ Backend introuvable — lance d'abord : cd backend && npm install"
+if [ ! -f "$PROJECT_DIR/backend/node_modules/.bin/tsx" ]; then
+  echo "📦 Installation des dépendances backend..."
+  cd "$PROJECT_DIR/backend" && npm install
 fi
+echo "📦 Démarrage du backend (port 3001)..."
+cd "$PROJECT_DIR/backend"
+node_modules/.bin/tsx src/index.ts &
+BACKEND_PID=$!
 
 # Frontend
-if [ -f "$PROJECT_DIR/frontend/node_modules/.bin/vite" ]; then
-  echo "🎨 Démarrage du frontend (port 5173)..."
-  cd "$PROJECT_DIR/frontend"
-  node_modules/.bin/vite --host 0.0.0.0 --port 5173 &
-  FRONTEND_PID=$!
-else
-  echo "❌ Frontend introuvable — lance d'abord : cd frontend && npm install"
+if [ ! -f "$PROJECT_DIR/frontend/node_modules/.bin/vite" ]; then
+  echo "📦 Installation des dépendances frontend..."
+  cd "$PROJECT_DIR/frontend" && npm install
 fi
+echo "🎨 Démarrage du frontend (port 5173)..."
+cd "$PROJECT_DIR/frontend"
+node_modules/.bin/vite --host 0.0.0.0 --port 5173 &
+FRONTEND_PID=$!
 
 echo ""
 echo "✅ Projet lancé !"
