@@ -1,23 +1,43 @@
-import { initDb, queryOne, execute } from './database.js';
+import { initDb, queryOne, execute, getDb } from './database.js';
 import { v4 as uuid } from 'uuid';
+import crypto from 'crypto';
+
+function hashPassword(password: string): string {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const derivedKey = crypto.scryptSync(password, salt, 64);
+  return salt + ':' + derivedKey.toString('hex');
+}
 
 async function seed() {
   await initDb();
+
   const existing = queryOne('SELECT COUNT(*) as count FROM users') as any;
   if (existing.count > 0) {
+    const hasPassword = queryOne("SELECT COUNT(*) as count FROM users WHERE password_hash != ''") as any;
+    if (hasPassword.count === 0) {
+      const db = getDb();
+      db.run("UPDATE users SET password_hash = ? WHERE email = 'admin@maintainx.com'", [hashPassword('admin123')]);
+      db.run("UPDATE users SET password_hash = ? WHERE email = 'sophie@maintainx.com'", [hashPassword('sophie123')]);
+      db.run("UPDATE users SET password_hash = ? WHERE email = 'thomas@maintainx.com'", [hashPassword('thomas123')]);
+      db.run("UPDATE users SET password_hash = ? WHERE email = 'lucas@maintainx.com'", [hashPassword('lucas123')]);
+      console.log('Passwords added to existing users.');
+    }
     console.log('Database already seeded.');
     return;
   }
 
+  const hash = (pw: string) => hashPassword(pw);
+
   const users = [
-    { id: uuid(), name: 'Admin', email: 'admin@maintainx.com', role: 'admin' },
-    { id: uuid(), name: 'Sophie Martin', email: 'sophie@maintainx.com', role: 'manager' },
-    { id: uuid(), name: 'Thomas Dubois', email: 'thomas@maintainx.com', role: 'technician' },
-    { id: uuid(), name: 'Lucas Petit', email: 'lucas@maintainx.com', role: 'technician' },
+    { id: uuid(), name: 'Admin', email: 'admin@maintainx.com', role: 'admin', password_hash: hash('admin123') },
+    { id: uuid(), name: 'Sophie Martin', email: 'sophie@maintainx.com', role: 'manager', password_hash: hash('sophie123') },
+    { id: uuid(), name: 'Thomas Dubois', email: 'thomas@maintainx.com', role: 'technician', password_hash: hash('thomas123') },
+    { id: uuid(), name: 'Lucas Petit', email: 'lucas@maintainx.com', role: 'technician', password_hash: hash('lucas123') },
   ];
 
   for (const u of users) {
-    execute('INSERT INTO users (id, name, email, role) VALUES (?, ?, ?, ?)', [u.id, u.name, u.email, u.role]);
+    execute('INSERT INTO users (id, name, email, role, password_hash) VALUES (?, ?, ?, ?, ?)',
+      [u.id, u.name, u.email, u.role, u.password_hash]);
   }
 
   const equipment = [
@@ -70,6 +90,10 @@ async function seed() {
   }
 
   console.log('Database seeded successfully!');
+  console.log('---');
+  console.log('Admin: admin@maintainx.com / admin123');
+  console.log('Manager: sophie@maintainx.com / sophie123');
+  console.log('Technician: thomas@maintainx.com / thomas123');
 }
 
 seed().catch(console.error);

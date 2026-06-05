@@ -4,6 +4,7 @@ import { useApi } from '../hooks/useApi';
 import { api } from '../services/api';
 import { Fault, FaultStatus, STATUS_LABELS, PRIORITY_LABELS } from '../types';
 import { LoadingSpinner, StatusBadge, Modal } from '../components/ui/Common';
+import { useToast } from '../components/ui/Toast';
 import { ArrowLeft, Send, Package, Plus, MessageSquare, Clock, Wrench, CheckCircle2, Circle } from 'lucide-react';
 
 const statusFlow: FaultStatus[] = ['submitted', 'analysis', 'inspection', 'validation', 'manufacturing', 'delivery', 'closed'];
@@ -19,9 +20,10 @@ export default function FaultDetail() {
   const { data: fault, loading, refetch } = useApi<Fault>(() => api.faults.get(id!));
   const [comment, setComment] = useState('');
   const [showPartsModal, setShowPartsModal] = useState(false);
+  const { addToast } = useToast();
 
   if (loading) return <LoadingSpinner />;
-  if (!fault) return <p className="text-slate-400">Panne introuvable.</p>;
+  if (!fault) return <p className="text-muted">Panne introuvable.</p>;
 
   const currentIndex = statusFlow.indexOf(fault.status);
 
@@ -29,6 +31,7 @@ export default function FaultDetail() {
     const nextIdx = currentIndex + 1;
     if (nextIdx >= statusFlow.length) return;
     await api.faults.updateStatus(fault!.id, statusFlow[nextIdx]);
+    addToast(`Panne avancée vers ${STATUS_LABELS[statusFlow[nextIdx]]}`, 'success');
     refetch();
   }
 
@@ -37,72 +40,73 @@ export default function FaultDetail() {
     if (!comment.trim()) return;
     await api.faults.addComment(fault!.id, { content: comment });
     setComment('');
+    addToast('Commentaire ajouté', 'success');
     refetch();
   }
 
   return (
-    <div className="space-y-8 max-w-4xl animate-fade-in">
-      <button onClick={() => navigate('/kanban')} className="btn-ghost btn-sm">
-        <ArrowLeft className="w-4 h-4" /> Retour au Kanban
+    <div className="space-y-10 max-w-4xl animate-fade-in">
+      <button onClick={() => navigate('/kanban')} className="btn-ghost">
+        <ArrowLeft className="w-5 h-5" /> Retour au Kanban
       </button>
 
       <div className="card-glow">
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <div className={`p-3.5 rounded-2xl border shadow-lg ${
+        <div className="flex items-start justify-between mb-8">
+          <div className="flex items-center gap-5">
+            <div className={`p-4 rounded-2xl border shadow-lg ${
               fault.priority === 'critical' ? 'bg-gradient-to-br from-red-500/20 to-red-600/10 border-red-500/20' :
               fault.priority === 'high' ? 'bg-gradient-to-br from-orange-500/20 to-orange-600/10 border-orange-500/20' :
               'bg-gradient-to-br from-amber-500/20 to-amber-600/10 border-amber-500/20'
             }`}>
-              <Wrench className={`w-6 h-6 ${
+              <Wrench className={`w-7 h-7 ${
                 fault.priority === 'critical' ? 'text-red-400' :
                 fault.priority === 'high' ? 'text-orange-400' : 'text-amber-400'
               }`} />
             </div>
             <div>
-              <h1 className="text-xl lg:text-2xl font-bold text-white">{fault.title}</h1>
-              <p className="text-sm text-slate-400 mt-1 font-medium">{fault.equipment_name}</p>
+              <h1 className="text-2xl lg:text-3xl font-bold text-main">{fault.title}</h1>
+              <p className="text-base text-muted mt-1.5 font-medium">{fault.equipment_name}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
             <StatusBadge status={fault.priority} labels={PRIORITY_LABELS} />
             <StatusBadge status={fault.status} labels={STATUS_LABELS} />
           </div>
         </div>
 
-        <p className="text-sm text-slate-300 mb-6 leading-relaxed">{fault.description}</p>
+        <p className="text-base text-muted mb-8 leading-relaxed">{fault.description}</p>
 
-        <div className="flex items-center gap-2 text-xs text-slate-500 mb-6 bg-slate-800/30 rounded-xl px-4 py-3 border border-slate-800/50">
-          <Clock className="w-3.5 h-3.5" />
+        <div className="flex items-center gap-2 text-sm text-dim mb-8 bg-card-30 rounded-xl px-5 py-4 border-subtle">
+          <Clock className="w-4 h-4" />
           Créée le {new Date(fault.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
         </div>
 
-        <div className="space-y-3">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Progression</p>
+        <div className="space-y-4">
+          <p className="text-sm font-bold text-dim uppercase tracking-widest">Progression</p>
           <div className="flex items-center gap-1">
             {statusFlow.map((s, i) => (
               <div key={s} className="flex items-center flex-1">
                 <div className={`flex items-center gap-2 ${
-                  i <= currentIndex ? 'text-brand-400' : 'text-slate-700'
+                  i <= currentIndex ? 'text-brand-400' : 'text-subtle'
                 }`}>
                   {i <= currentIndex
-                    ? <div className="w-6 h-6 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/30">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                    ? <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/30">
+                        <CheckCircle2 className="w-5 h-5 text-white" />
                       </div>
-                    : <div className="w-6 h-6 rounded-full bg-slate-800 border border-slate-700/50 flex items-center justify-center">
-                        <div className="w-2 h-2 rounded-full bg-slate-600" />
+                    : <div className="w-8 h-8 rounded-full bg-card-solid border-card flex items-center justify-center">
+                        <div className="w-3 h-3 rounded-full bg-subtle" />
                       </div>
                   }
                 </div>
                 {i < statusFlow.length - 1 && (
                   <div className={`flex-1 h-0.5 mx-1 rounded-full ${
-                    i < currentIndex ? 'bg-gradient-to-r from-brand-500 to-brand-400' : 'bg-slate-800'
+                    i < currentIndex ? 'bg-gradient-to-r from-brand-500 to-brand-400' : 'bg-card-solid'
                   }`} />
                 )}
               </div>
             ))}
           </div>
-          <div className="flex justify-between text-[10px] text-slate-600 font-medium">
+          <div className="flex justify-between text-xs text-subtle font-medium">
             {statusFlow.map((s, i) => (
               <span key={s} className={i <= currentIndex ? 'text-brand-400' : ''}>{STATUS_LABELS[s]}</span>
             ))}
@@ -110,68 +114,68 @@ export default function FaultDetail() {
         </div>
 
         {currentIndex < statusFlow.length - 1 && (
-          <button onClick={advanceStatus} className="btn-primary mt-6 shadow-lg shadow-brand-500/20">
+          <button onClick={advanceStatus} className="btn-primary mt-8 shadow-lg shadow-brand-500/20 text-lg px-8 py-4">
             Avancer → {STATUS_LABELS[statusFlow[currentIndex + 1]]}
           </button>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="card-glow">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="text-base font-bold text-white flex items-center gap-2.5">
-              <Package className="w-4.5 h-4.5 text-brand-400" /> Pièces détachées
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-main flex items-center gap-3">
+              <Package className="w-5 h-5 text-brand-400" /> Pièces détachées
             </h3>
-            <button onClick={() => setShowPartsModal(true)} className="btn-ghost btn-sm">
-              <Plus className="w-3.5 h-3.5" /> Ajouter
+            <button onClick={() => setShowPartsModal(true)} className="btn-ghost">
+              <Plus className="w-4 h-4" /> Ajouter
             </button>
           </div>
           {fault.spare_parts && fault.spare_parts.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {fault.spare_parts.map(p => (
-                <div key={p.id} className="flex items-center justify-between p-3.5 rounded-xl bg-slate-800/30 border border-slate-800/50 hover:border-brand-500/20 transition-all">
+                <div key={p.id} className="flex items-center justify-between p-4 rounded-xl bg-card-30 border-subtle hover:border-brand-500/20 transition-all">
                   <div>
-                    <p className="text-sm font-semibold text-white">{p.name}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{p.reference}<span className="mx-1.5">·</span>x{p.quantity}</p>
+                    <p className="text-base font-semibold text-main">{p.name}</p>
+                    <p className="text-sm text-dim mt-1">{p.reference}<span className="mx-1.5">·</span>x{p.quantity}</p>
                   </div>
                   <StatusBadge status={p.status} labels={{ pending: 'En attente', ordered: 'Commandé', received: 'Reçu', installed: 'Installé', cancelled: 'Annulé' }} />
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <Package className="w-10 h-10 text-slate-700 mx-auto mb-2" />
-              <p className="text-sm text-slate-500">Aucune pièce associée</p>
+            <div className="text-center py-12">
+              <Package className="w-12 h-12 text-dim mx-auto mb-3" />
+              <p className="text-base text-dim">Aucune pièce associée</p>
             </div>
           )}
         </div>
 
         <div className="card-glow">
-          <h3 className="text-base font-bold text-white mb-5 flex items-center gap-2.5">
-            <MessageSquare className="w-4.5 h-4.5 text-brand-400" /> Commentaires
+          <h3 className="text-lg font-bold text-main mb-6 flex items-center gap-3">
+            <MessageSquare className="w-5 h-5 text-brand-400" /> Commentaires
           </h3>
-          <form onSubmit={handleAddComment} className="flex gap-3 mb-5">
-            <input className="input flex-1" placeholder="Ajouter un commentaire..." value={comment} onChange={e => setComment(e.target.value)} />
-            <button type="submit" className="btn-primary btn-sm"><Send className="w-4 h-4" /></button>
+          <form onSubmit={handleAddComment} className="flex gap-3 mb-6">
+            <input className="input flex-1 text-base" placeholder="Ajouter un commentaire..." value={comment} onChange={e => setComment(e.target.value)} />
+            <button type="submit" className="btn-primary"><Send className="w-5 h-5" /></button>
           </form>
-          <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+          <div className="space-y-4 max-h-96 overflow-y-auto pr-1">
             {fault.comments && fault.comments.length > 0 ? (
               fault.comments.map(c => (
-                <div key={c.id} className="p-3.5 rounded-xl bg-slate-800/20 border border-slate-800/50">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-bold text-slate-300 flex items-center gap-2">
-                      <div className="w-5 h-5 rounded-full bg-gradient-to-br from-brand-400 to-purple-500 flex items-center justify-center text-[8px] font-bold text-white">
+                <div key={c.id} className="p-4 rounded-xl bg-card-20 border-subtle">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-bold text-muted flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-brand-400 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white">
                         {(c.user_name || 'A')[0]}
                       </div>
                       {c.user_name || 'Anonyme'}
                     </span>
-                    <span className="text-[10px] text-slate-600">{new Date(c.created_at).toLocaleDateString('fr-FR')}</span>
+                    <span className="text-xs text-subtle">{new Date(c.created_at).toLocaleDateString('fr-FR')}</span>
                   </div>
-                  <p className="text-sm text-slate-300 ml-7">{c.content}</p>
+                  <p className="text-base text-muted ml-8">{c.content}</p>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-slate-500 text-center py-6">Aucun commentaire. Sois le premier à réagir !</p>
+              <p className="text-base text-dim text-center py-8">Aucun commentaire. Sois le premier à réagir !</p>
             )}
           </div>
         </div>
@@ -186,16 +190,17 @@ export default function FaultDetail() {
 
 function PartsForm({ faultId, onDone }: { faultId: string; onDone: () => void }) {
   const [form, setForm] = useState({ name: '', reference: '', quantity: 1, unit_price: 0, supplier: '' });
+  const { addToast } = useToast();
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    try { await api.spareParts.create({ ...form, fault_id: faultId }); onDone(); }
-    catch (err: any) { alert(err.message); }
+    try { await api.spareParts.create({ ...form, fault_id: faultId }); addToast('Pièce ajoutée avec succès', 'success'); onDone(); }
+    catch (err: any) { addToast(err.message, 'error'); }
   }
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div><label className="label">Nom</label><input className="input" required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
       <div><label className="label">Référence</label><input className="input" value={form.reference} onChange={e => setForm(f => ({ ...f, reference: e.target.value }))} /></div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-5">
         <div><label className="label">Quantité</label><input className="input" type="number" min={1} value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: +e.target.value }))} /></div>
         <div><label className="label">Prix unitaire</label><input className="input" type="number" min={0} step={0.01} value={form.unit_price} onChange={e => setForm(f => ({ ...f, unit_price: +e.target.value }))} /></div>
       </div>

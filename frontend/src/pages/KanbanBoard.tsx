@@ -4,6 +4,7 @@ import { useApi } from '../hooks/useApi';
 import { api } from '../services/api';
 import { Fault, FaultStatus, STATUS_LABELS, PRIORITY_LABELS } from '../types';
 import { LoadingSpinner, Modal, StatusBadge, PageHeader } from '../components/ui/Common';
+import { useToast } from '../components/ui/Toast';
 import { Plus, Clock, Wrench, GripVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -31,6 +32,7 @@ export default function KanbanBoard() {
   const { data: equipment } = useApi<any[]>(() => api.equipment.list());
   const [columnsData, setColumnsData] = useState<Record<string, Fault[]>>({});
   const [showModal, setShowModal] = useState(false);
+  const { addToast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -57,32 +59,32 @@ export default function KanbanBoard() {
     newColumns[destCol] = destItems;
     setColumnsData(newColumns);
 
-    try { await api.faults.updateStatus(faultId, destCol); }
-    catch { refetch(); }
+    try { await api.faults.updateStatus(faultId, destCol); addToast(`Panne déplacée vers ${STATUS_LABELS[destCol]}`, 'success'); }
+    catch { addToast('Erreur lors du déplacement', 'error'); refetch(); }
   }
 
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         title="Tableau Kanban"
         description="Glissez-déposez les pannes pour suivre le workflow"
         action={
           <button onClick={() => setShowModal(true)} className="btn-primary shadow-lg shadow-brand-500/20">
-            <Plus className="w-4 h-4" /> Nouvelle panne
+            <Plus className="w-5 h-5" /> Nouvelle panne
           </button>
         }
       />
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="flex gap-5 overflow-x-auto pb-6" style={{ minHeight: 'calc(100vh - 200px)' }}>
+        <div className="flex gap-6 overflow-x-auto pb-8" style={{ minHeight: 'calc(100vh - 200px)' }}>
           {columns.map(col => (
-            <div key={col} className="flex-shrink-0 w-80">
-              <div className={`rounded-t-2xl bg-gradient-to-b ${columnGradients[col]} border-t-2 border-x px-4 pt-4 pb-3`}>
+            <div key={col} className="flex-shrink-0 w-96">
+              <div className={`rounded-t-2xl bg-gradient-to-b ${columnGradients[col]} border-t-2 border-x px-6 pt-5 pb-4`}>
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-white tracking-wide">{STATUS_LABELS[col]}</h3>
-                  <span className="text-xs font-bold text-slate-400 bg-slate-800/80 rounded-full px-2.5 py-1 border border-slate-700/50">
+                  <h3 className="text-base font-bold text-main tracking-wide">{STATUS_LABELS[col]}</h3>
+                  <span className="text-sm font-bold text-muted bg-card-80 rounded-full px-3.5 py-1.5 border-card">
                     {(columnsData[col] || []).length}
                   </span>
                 </div>
@@ -92,7 +94,7 @@ export default function KanbanBoard() {
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className={`bg-slate-900/40 border-x border-b border-slate-800/50 p-4 space-y-3 min-h-[200px] transition-all duration-200 ${
+                    className={`bg-page border-x border-b border-subtle p-5 space-y-4 min-h-[200px] transition-all duration-200 ${
                       snapshot.isDraggingOver ? 'bg-brand-900/20' : ''
                     }`}
                     style={{ borderBottomLeftRadius: '1rem', borderBottomRightRadius: '1rem' }}
@@ -105,31 +107,31 @@ export default function KanbanBoard() {
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
                             onClick={() => navigate(`/faults/${fault.id}`)}
-                            className={`group cursor-grab active:cursor-grabbing rounded-xl border bg-slate-800/30 backdrop-blur-sm transition-all duration-200 ${
+                            className={`group cursor-grab active:cursor-grabbing rounded-xl border bg-card-30 backdrop-blur-sm transition-all duration-200 ${
                               snapshot.isDragging
                                 ? 'shadow-2xl shadow-brand-600/30 border-brand-500/50 scale-[1.02] rotate-[1deg]'
-                                : 'border-slate-700/30 hover:border-slate-600/50 hover:bg-slate-800/50'
+                                : 'border-card hover:border-slate-600/50 hover:bg-card-80'
                             } ${priorityBorders[fault.priority] || 'border-l-slate-600'} border-l-4`}
-                            style={{ padding: '16px' }}
+                            style={{ padding: '20px' }}
                           >
-                            <div className="flex items-start justify-between mb-2.5">
+                            <div className="flex items-start justify-between mb-3">
                               <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <GripVertical className="w-3.5 h-3.5 text-slate-600 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <h4 className="text-sm font-bold text-white truncate">{fault.title}</h4>
+                                <GripVertical className="w-4 h-4 text-subtle shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <h4 className="text-base font-bold text-main truncate">{fault.title}</h4>
                               </div>
                               <StatusBadge status={fault.priority} labels={PRIORITY_LABELS} />
                             </div>
                             {fault.equipment_name && (
-                              <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-2 ml-5">
-                                <Wrench className="w-3 h-3" /> {fault.equipment_name}
+                              <p className="text-sm text-dim flex items-center gap-2 mt-2 ml-6">
+                                <Wrench className="w-3.5 h-3.5" /> {fault.equipment_name}
                               </p>
                             )}
-                            <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-800/50">
-                              <span className="text-[10px] text-slate-600 font-medium flex items-center gap-1.5">
-                                <Clock className="w-3 h-3" />
+                            <div className="flex items-center justify-between mt-4 pt-3 border-t border-subtle">
+                              <span className="text-xs text-subtle font-medium flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5" />
                                 {new Date(fault.created_at).toLocaleDateString('fr-FR')}
                               </span>
-                              <div className={`w-1.5 h-1.5 rounded-full ${fault.priority === 'critical' ? 'bg-red-500 animate-pulse' : fault.priority === 'high' ? 'bg-orange-500' : fault.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}`} />
+                              <div className={`w-2 h-2 rounded-full ${fault.priority === 'critical' ? 'bg-red-500 animate-pulse' : fault.priority === 'high' ? 'bg-orange-500' : fault.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}`} />
                             </div>
                           </div>
                         )}
@@ -137,7 +139,7 @@ export default function KanbanBoard() {
                     ))}
                     {provided.placeholder}
                     {(columnsData[col] || []).length === 0 && (
-                      <p className="text-xs text-slate-700 text-center py-10 font-medium">Aucune panne</p>
+                      <p className="text-sm text-subtle text-center py-12 font-medium">Aucune panne</p>
                     )}
                   </div>
                 )}
@@ -156,13 +158,14 @@ export default function KanbanBoard() {
 
 function FaultForm({ onDone, equipment }: { onDone: () => void; equipment: any[] }) {
   const [form, setForm] = useState({ equipment_id: '', title: '', description: '', priority: 'medium' });
+  const { addToast } = useToast();
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    try { await api.faults.create(form); onDone(); }
-    catch (err: any) { alert(err.message); }
+    try { await api.faults.create(form); addToast('Panne créée avec succès', 'success'); onDone(); }
+    catch (err: any) { addToast(err.message, 'error'); }
   }
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <label className="label">Équipement</label>
         <select className="input" required value={form.equipment_id} onChange={e => setForm(f => ({ ...f, equipment_id: e.target.value }))}>

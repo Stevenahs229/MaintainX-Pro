@@ -1,8 +1,16 @@
 const BASE = '/api';
 
+function getToken(): string | null {
+  return localStorage.getItem('token');
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = getToken();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = token;
+
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: { ...headers, ...options?.headers as Record<string, string> },
     ...options,
   });
   if (!res.ok) {

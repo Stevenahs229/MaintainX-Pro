@@ -30,66 +30,66 @@ export default function Notifications() {
   }
 
   return (
-    <div className="space-y-6 max-w-3xl animate-fade-in">
+    <div className="space-y-8 max-w-3xl animate-fade-in">
       <div className="flex items-center justify-between mb-2">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">Activité récente</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl lg:text-4xl font-bold text-main tracking-tight">Activité récente</h1>
             {unread > 0 && (
-              <span className="px-3 py-1 rounded-full bg-red-500/15 border border-red-500/20 text-xs font-bold text-red-400 animate-pulse">
+              <span className="px-4 py-1.5 rounded-full bg-red-500/15 border border-red-500/20 text-sm font-bold text-red-400 animate-pulse">
                 {unread} nouveau{unread > 1 ? 'x' : ''}
               </span>
             )}
           </div>
-          <p className="text-sm text-slate-400 mt-1.5">
-            {unread > 0 ? 'Des événements nécessitent votre attention' : 'Tout est à jour, aucun nouveau message'}
+          <p className="text-base text-muted mt-2">
+            {unread > 0 ? 'Des événements nécessitent votre attention' : "Tout est à jour, aucun nouveau message"}
           </p>
         </div>
         {unread > 0 && (
-          <button onClick={markAllRead} className="btn-secondary btn-sm shadow-lg">
-            <CheckCheck className="w-4 h-4" /> Tout marquer lu
+          <button onClick={markAllRead} className="btn-secondary shadow-lg">
+            <CheckCheck className="w-5 h-5" /> Tout marquer lu
           </button>
         )}
       </div>
 
-      <div className="space-y-2.5">
+      <div className="space-y-3">
         {activities.length === 0 ? (
           <div className="text-center py-24 card-glow">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-700/30 to-slate-800/30 border border-slate-700/30 flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-7 h-7 text-slate-600" />
+              <Sparkles className="w-7 h-7 text-subtle" />
             </div>
-            <p className="text-base text-slate-500 font-medium">Aucune activité pour le moment</p>
+            <p className="text-base text-dim font-medium">Aucune activité pour le moment</p>
           </div>
         ) : (
           activities.map((a, i) => {
             const Icon = iconMap[a.type] || Bell;
-            const color = colorMap[a.type] || 'from-slate-500/20 to-slate-600/10 border-slate-500/20 text-slate-400';
+            const color = colorMap[a.type] || 'from-slate-500/20 to-slate-600/10 border-slate-500/20 text-muted';
             return (
               <div
                 key={a.id}
                 onClick={() => handleClick(a)}
-                className={`flex items-start gap-4 p-5 rounded-2xl border transition-all duration-200 cursor-pointer animate-slide-up ${
+                className={`flex items-start gap-5 p-6 rounded-2xl border transition-all duration-200 cursor-pointer animate-slide-up ${
                   !a.read
                     ? 'bg-gradient-to-r from-brand-500/5 to-transparent border-brand-500/30 shadow-lg shadow-brand-500/5'
-                    : 'bg-slate-900/30 border-slate-800/30 hover:border-slate-700/50 hover:bg-slate-800/20'
+                    : 'bg-card-30 border-subtle hover:border-card hover:bg-card-20'
                 }`}
                 style={{ animationDelay: `${i * 50}ms` }}
               >
-                <div className={`p-3 rounded-xl bg-gradient-to-br ${color} border shrink-0`}>
-                  <Icon className="w-4.5 h-4.5" />
+                <div className={`p-4 rounded-xl bg-gradient-to-br ${color} border shrink-0`}>
+                  <Icon className="w-5 h-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className={`text-sm ${!a.read ? 'text-white font-semibold' : 'text-slate-300'}`}>
+                  <p className={`text-base ${!a.read ? 'text-main font-semibold' : 'text-muted'}`}>
                     {a.message}
                   </p>
-                  <p className="text-xs text-slate-500 mt-1.5 font-medium">
+                  <p className="text-sm text-dim mt-2 font-medium">
                     {new Date(a.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
                 {!a.read && (
-                  <span className="relative flex h-2.5 w-2.5 shrink-0 mt-2">
+                  <span className="relative flex h-3 w-3 shrink-0 mt-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand-500" />
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-brand-500" />
                   </span>
                 )}
               </div>

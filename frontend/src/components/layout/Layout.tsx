@@ -1,8 +1,9 @@
-import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Wrench, Package, Bell, Kanban, Hexagon, LogOut } from 'lucide-react';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/AuthContext';
 import { useNotifications } from '../../hooks/useNotifications';
+import { LayoutDashboard, Wrench, Package, Bell, Kanban, Hexagon, LogOut, User } from 'lucide-react';
 
-const navItems = [
+const adminNav = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/kanban', icon: Kanban, label: 'Kanban' },
   { to: '/equipment', icon: Wrench, label: 'Équipements' },
@@ -10,57 +11,76 @@ const navItems = [
   { to: '/notifications', icon: Bell, label: 'Activité' },
 ];
 
+const userNav = [
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/kanban', icon: Kanban, label: 'Mes pannes' },
+  { to: '/equipment', icon: Wrench, label: 'Équipements' },
+];
+
 export default function Layout() {
+  const { user, logout } = useAuth();
   const { unread } = useNotifications();
+  const navigate = useNavigate();
+  const isAdmin = user?.role === 'admin' || user?.role === 'manager';
+  const navItems = isAdmin ? adminNav : userNav;
+
+  async function handleLogout() {
+    await logout();
+    navigate('/login');
+  }
 
   return (
     <div className="flex h-screen overflow-hidden relative z-10">
-      <aside className="w-64 lg:w-72 bg-slate-900/60 border-r border-slate-800/50 flex flex-col shrink-0 backdrop-blur-xl">
-        <div className="p-5 lg:p-6 border-b border-slate-800/50">
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 lg:w-12 lg:h-12 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-lg shadow-brand-500/20 animate-float">
-              <Hexagon className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
+      <aside className="w-72 lg:w-80 bg-sidebar border-r border-card flex flex-col shrink-0 backdrop-blur-xl">
+        <div className="p-6 lg:p-7 border-b border-card">
+          <div className="flex items-center gap-4">
+            <div className="w-13 h-13 lg:w-14 lg:h-14 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-xl shadow-brand-500/20 animate-float">
+              <Hexagon className="w-6 h-6 lg:w-7 lg:h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-base lg:text-lg font-bold text-white tracking-tight">MaintainX Pro</h1>
-              <p className="text-[11px] lg:text-xs text-slate-500 font-medium tracking-wider uppercase">Industrial Suite</p>
+              <h1 className="text-xl lg:text-2xl font-bold text-main tracking-tight">MaintainX Pro</h1>
+              <p className="text-xs lg:text-sm text-muted font-medium tracking-wider uppercase">
+                {isAdmin ? 'Admin Suite' : 'Espace employé'}
+              </p>
             </div>
           </div>
         </div>
-        <nav className="flex-1 p-3 lg:p-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-4 lg:p-5 space-y-1.5 overflow-y-auto">
           {navItems.map(item => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                isActive ? 'navbar-link-active' : 'navbar-link text-slate-400'
+                isActive ? 'navbar-link-active' : 'navbar-link'
               }
             >
-              <item.icon className="w-4.5 h-4.5 lg:w-5 lg:h-5 shrink-0 relative z-10" />
-              <span className="relative z-10">{item.label}</span>
+              <item.icon className="w-5 h-5 lg:w-5.5 lg:h-5.5 shrink-0 relative z-10" />
+              <span className="relative z-10 text-base lg:text-lg">{item.label}</span>
               {item.to === '/notifications' && unread > 0 && (
-                <span className="ml-auto relative z-10 bg-red-500/90 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 shadow-lg shadow-red-500/20">
+                <span className="ml-auto relative z-10 bg-red-500/90 text-white text-xs font-bold rounded-full min-w-[24px] h-6 flex items-center justify-center px-1.5 shadow-xl shadow-red-500/20">
                   {unread > 99 ? '99+' : unread}
                 </span>
               )}
             </NavLink>
           ))}
         </nav>
-        <div className="p-3 lg:p-4 border-t border-slate-800/50">
-          <div className="flex items-center gap-3.5 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.05] transition-colors cursor-pointer group">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-400 to-purple-500 flex items-center justify-center text-xs font-bold text-white shadow-lg shrink-0">
-              A
+        <div className="p-4 lg:p-5 border-t border-card">
+          <div className="flex items-center gap-4 px-4 py-3.5 rounded-xl bg-hover hover:bg-white/[0.08] transition-colors cursor-pointer group">
+            <div className="w-10 h-10 lg:w-11 lg:h-11 rounded-full bg-gradient-to-br from-brand-400 to-purple-500 flex items-center justify-center text-sm font-bold text-white shadow-lg shrink-0">
+              {(user?.name || 'A')[0]}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-white truncate group-hover:text-brand-400 transition-colors">Admin</p>
-              <p className="text-[11px] text-slate-500 truncate">admin@maintainx.com</p>
+              <p className="text-base lg:text-lg font-medium text-main truncate group-hover:text-brand-400 transition-colors">{user?.name}</p>
+              <p className="text-xs lg:text-sm text-dim truncate capitalize">{user?.role}</p>
             </div>
-            <LogOut className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors shrink-0" />
+            <button onClick={handleLogout} className="p-2 rounded-lg hover:bg-hover text-dim hover:text-muted transition-all shrink-0">
+              <LogOut className="w-4 h-4 lg:w-5 lg:h-5" />
+            </button>
           </div>
         </div>
       </aside>
       <main className="flex-1 overflow-y-auto">
-        <div className="p-5 lg:p-8 max-w-7xl mx-auto animate-fade-in">
+        <div className="p-6 lg:p-10 max-w-7xl mx-auto animate-fade-in">
           <Outlet />
         </div>
       </main>

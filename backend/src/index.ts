@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { initDb } from './database.js';
+import authRoutes from './routes/auth.js';
 import equipmentRoutes from './routes/equipment.js';
 import faultRoutes from './routes/faults.js';
 import sparePartRoutes from './routes/spareparts.js';
@@ -14,6 +15,7 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+app.use('/api/auth', authRoutes);
 app.use('/api/equipment', equipmentRoutes);
 app.use('/api/faults', faultRoutes);
 app.use('/api/spare-parts', sparePartRoutes);
