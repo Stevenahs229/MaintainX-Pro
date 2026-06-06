@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc && mkdir -p dist/data && cp src/data/explicitImages.json dist/data/",
     "start": "NODE_ENV=production node dist/index.js",
     "seed": "tsx src/seed.ts"
   },
