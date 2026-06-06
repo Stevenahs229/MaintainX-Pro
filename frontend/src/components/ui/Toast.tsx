@@ -40,7 +40,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 }
 
 export function useToast() {
-  return useContext(Ctx);
+  const ctx = useContext(Ctx);
+  if (!ctx) {
+    return {
+      toasts: [],
+      addToast: (_message: string, _type?: Toast['type']) => {},
+      removeToast: (_id: string) => {},
+    };
+  }
+  return ctx;
 }
 
 const typeStyles: Record<Toast['type'], string> = {

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth, Role } from './context/AuthContext';
+import { ToastProvider } from './components/ui/Toast';
 import Layout from './components/layout/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -64,7 +65,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
+        <ToastProvider>
+          <Routes>
           <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
           <Route element={<RequireAuth><Layout /></RequireAuth>}>
             <Route path="/" element={<HomeRedirect />} />
@@ -95,7 +97,8 @@ export default function App() {
             <Route path="/onboarding" element={<RequireRole roles={['client']}><Onboarding /></RequireRole>} />
           </Route>
           <Route path="*" element={<HomeRedirect />} />
-        </Routes>
+          </Routes>
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   );
