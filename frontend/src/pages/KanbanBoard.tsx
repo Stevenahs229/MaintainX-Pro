@@ -11,14 +11,14 @@ import { faultImage } from '../lib/equipmentImages';
 
 const columns: FaultStatus[] = ['submitted', 'analysis', 'inspection', 'validation', 'manufacturing', 'delivery', 'closed'];
 
-const columnColors: Record<FaultStatus, string> = {
-  submitted: 'border-t-blue-500',
-  analysis: 'border-t-purple-500',
-  inspection: 'border-t-amber-500',
-  validation: 'border-t-cyan-500',
-  manufacturing: 'border-t-orange-500',
-  delivery: 'border-t-indigo-500',
-  closed: 'border-t-green-500',
+const columnGradients: Record<FaultStatus, string> = {
+  submitted: 'from-blue-600/20 to-blue-950/20 border-blue-500/20',
+  analysis: 'from-purple-600/20 to-purple-950/20 border-purple-500/20',
+  inspection: 'from-amber-600/20 to-amber-950/20 border-amber-500/20',
+  validation: 'from-cyan-600/20 to-cyan-950/20 border-cyan-500/20',
+  manufacturing: 'from-orange-600/20 to-orange-950/20 border-orange-500/20',
+  delivery: 'from-indigo-600/20 to-indigo-950/20 border-indigo-500/20',
+  closed: 'from-green-600/20 to-green-950/20 border-green-500/20',
 };
 
 const priorityIcon: Record<string, string> = {
@@ -39,15 +39,12 @@ export default function KanbanBoard() {
   useEffect(() => {
     if (!faults) return;
     const grouped: Record<string, Fault[]> = {};
-    for (const col of columns) {
-      grouped[col] = faults.filter(f => f.status === col);
-    }
+    for (const col of columns) grouped[col] = faults.filter(f => f.status === col);
     setColumnsData(grouped);
   }, [faults]);
 
   async function handleDragEnd(result: DropResult) {
     if (!result.destination || result.destination.droppableId === result.source.droppableId) return;
-
     const sourceCol = result.source.droppableId;
     const destCol = result.destination.droppableId as FaultStatus;
     const faultId = result.draggableId;
@@ -57,21 +54,14 @@ export default function KanbanBoard() {
     const destItems = [...(newColumns[destCol] || [])];
     const [moved] = sourceItems.splice(result.source.index, 1);
     if (!moved) return;
-
     moved.status = destCol;
     destItems.splice(result.destination.index, 0, moved);
     newColumns[sourceCol] = sourceItems;
     newColumns[destCol] = destItems;
     setColumnsData(newColumns);
 
-    setUpdating(true);
-    try {
-      await api.faults.updateStatus(faultId, destCol);
-    } catch (err) {
-      refetch();
-    } finally {
-      setUpdating(false);
-    }
+    try { await api.faults.updateStatus(faultId, destCol); addToast(`Panne déplacée vers ${STATUS_LABELS[destCol]}`, 'success'); }
+    catch { addToast('Erreur lors du déplacement', 'error'); refetch(); }
   }
 
   if (loading) return <LoadingSpinner />;
@@ -136,6 +126,7 @@ export default function KanbanBoard() {
                                 <Clock className="w-3 h-3" />
                                 {new Date(fault.created_at).toLocaleDateString('fr-FR')}
                               </span>
+                              <div className={`w-2 h-2 rounded-full ${fault.priority === 'critical' ? 'bg-red-500 animate-pulse' : fault.priority === 'high' ? 'bg-orange-500' : fault.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}`} />
                             </div>
                             </div>
                           </div>
@@ -195,21 +186,21 @@ function FaultForm({ onDone, equipment }: { onDone: () => void; equipment: any[]
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label className="label">Équipement *</label>
+        <label className="label">Équipement</label>
         <select className="input" required value={form.equipment_id} onChange={e => setForm(f => ({ ...f, equipment_id: e.target.value }))}>
           <option value="">Sélectionner...</option>
           {equipment.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
         </select>
       </div>
       <div>
-        <label className="label">Titre *</label>
-        <input className="input" required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
+        <label className="label">Titre</label>
+        <input className="input" required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Fuite d'huile compresseur" />
       </div>
       <div>
-        <label className="label">Description *</label>
-        <textarea className="input" rows={3} required value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+        <label className="label">Description</label>
+        <textarea className="input" rows={4} required value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Décrivez le problème..." />
       </div>
       <div>
         <label className="label">Priorité</label>

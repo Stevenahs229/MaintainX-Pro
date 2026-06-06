@@ -34,9 +34,9 @@ export default function EquipmentDetail() {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <button onClick={() => navigate('/equipment')} className="btn-ghost btn-sm">
-        <ArrowLeft className="w-4 h-4" /> Retour
+    <div className="space-y-10 max-w-4xl animate-fade-in">
+      <button onClick={() => navigate('/equipment')} className="btn-ghost">
+        <ArrowLeft className="w-5 h-5" /> Retour
       </button>
 
       <EquipmentHero equipment={equipment} className="h-52 w-full" />
@@ -47,10 +47,21 @@ export default function EquipmentDetail() {
             <h1 className="text-xl font-semibold text-ink tracking-tight">{equipment.name}</h1>
             <p className="text-sm text-ink-soft">{equipment.category}</p>
           </div>
-          <StatusBadge status={equipment.status} labels={{ active: 'Actif', maintenance: 'Maintenance', retired: 'Retiré' }} />
+          <div className="flex items-center gap-3 shrink-0">
+            <button onClick={() => setShowQR(!showQR)} className="btn-ghost btn-sm">
+              <QrCode className="w-4 h-4" /> QR Code
+            </button>
+            <StatusBadge status={equipment.status} labels={{ active: 'Actif', maintenance: 'Maintenance', retired: 'Retiré' }} />
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        {showQR && (
+          <div className="mb-8 flex justify-center animate-slide-up">
+            <QRCode value={qrValue} label={equipment.name} />
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
           {equipment.location && (
             <div>
               <p className="text-xs text-ink-faint flex items-center gap-1"><MapPin className="w-3 h-3" /> Localisation</p>
@@ -62,6 +73,10 @@ export default function EquipmentDetail() {
             <p className={`text-sm font-medium mt-0.5 ${equipment.health_score > 70 ? 'text-green-600' : equipment.health_score > 40 ? 'text-amber-600' : 'text-red-600'}`}>
               {equipment.health_score}%
             </p>
+          </div>
+          <div className="p-4 rounded-xl bg-card-30 border-subtle">
+            <p className="text-sm text-dim flex items-center gap-2 mb-1.5"><Activity className="w-4 h-4 text-brand-400" /> Statut</p>
+            <p className="text-base font-bold text-main capitalize">{equipment.status}</p>
           </div>
         </div>
 
@@ -112,7 +127,7 @@ export default function EquipmentDetail() {
                   <p className="text-sm font-medium text-ink truncate">{f.title}</p>
                   <p className="text-xs text-ink-faint mt-0.5">{new Date(f.created_at).toLocaleDateString('fr-FR')}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3 shrink-0 ml-4">
                   <StatusBadge status={f.priority} labels={{ low: 'Faible', medium: 'Moyenne', high: 'Haute', critical: 'Critique' }} />
                   <StatusBadge status={f.status} labels={STATUS_LABELS} />
                 </div>

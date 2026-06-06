@@ -45,6 +45,12 @@ function badgeCount(key: string | undefined, counts: Record<string, number>): nu
   return counts[key] || 0;
 }
 
+const userNav = [
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/kanban', icon: Kanban, label: 'Mes pannes' },
+  { to: '/equipment', icon: Wrench, label: 'Équipements' },
+];
+
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();

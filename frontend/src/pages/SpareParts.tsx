@@ -12,6 +12,7 @@ export default function SpareParts() {
   const canManage = can('parts:manage');
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const { addToast } = useToast();
 
   const filtered = parts?.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -21,6 +22,7 @@ export default function SpareParts() {
 
   async function updateStatus(id: string, status: string) {
     await api.spareParts.updateStatus(id, status);
+    addToast(`Pièce mise à jour: ${status}`, 'success');
     refetch();
   }
 
@@ -54,7 +56,7 @@ export default function SpareParts() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full">
               <thead>
                 <tr className="border-b border-line-soft bg-surface-muted">
                   <th className="text-left py-3 px-4 text-ink-faint font-medium">Pièce</th>
@@ -108,6 +110,7 @@ export default function SpareParts() {
       <Modal open={showModal} onClose={() => setShowModal(false)} title="Nouvelle pièce détachée">
         <PartsForm onDone={() => { setShowModal(false); refetch(); }} />
       </Modal>
+      </div>
     </div>
   );
 }
@@ -115,43 +118,22 @@ export default function SpareParts() {
 function PartsForm({ onDone }: { onDone: () => void }) {
   const [form, setForm] = useState({ name: '', reference: '', quantity: 1, unit_price: 0, supplier: '', fault_id: '' });
   const { data: faults } = useApi<any[]>(() => api.faults.list());
-
+  const { addToast } = useToast();
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    try {
-      await api.spareParts.create(form);
-      onDone();
-    } catch (err: any) {
-      alert(err.message);
-    }
+    try { await api.spareParts.create(form); addToast('Pièce créée avec succès', 'success'); onDone(); }
+    catch (err: any) { addToast(err.message, 'error'); }
   }
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="label">Nom *</label>
-        <input className="input" required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div><label className="label">Nom</label><input className="input" required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+      <div><label className="label">Référence</label><input className="input" value={form.reference} onChange={e => setForm(f => ({ ...f, reference: e.target.value }))} /></div>
+      <div className="grid grid-cols-2 gap-5">
+        <div><label className="label">Quantité</label><input className="input" type="number" min={1} value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: +e.target.value }))} /></div>
+        <div><label className="label">Prix unitaire</label><input className="input" type="number" min={0} step={0.01} value={form.unit_price} onChange={e => setForm(f => ({ ...f, unit_price: +e.target.value }))} /></div>
       </div>
-      <div>
-        <label className="label">Référence</label>
-        <input className="input" value={form.reference} onChange={e => setForm(f => ({ ...f, reference: e.target.value }))} />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="label">Quantité</label>
-          <input className="input" type="number" min={1} value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: +e.target.value }))} />
-        </div>
-        <div>
-          <label className="label">Prix unitaire</label>
-          <input className="input" type="number" min={0} step={0.01} value={form.unit_price} onChange={e => setForm(f => ({ ...f, unit_price: +e.target.value }))} />
-        </div>
-      </div>
-      <div>
-        <label className="label">Fournisseur</label>
-        <input className="input" value={form.supplier} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} />
-      </div>
-      <div>
-        <label className="label">Panne associée (optionnelle)</label>
+      <div><label className="label">Fournisseur</label><input className="input" value={form.supplier} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} /></div>
+      <div><label className="label">Panne associée</label>
         <select className="input" value={form.fault_id} onChange={e => setForm(f => ({ ...f, fault_id: e.target.value }))}>
           <option value="">Aucune</option>
           {faults?.map((f: any) => <option key={f.id} value={f.id}>{f.title}</option>)}

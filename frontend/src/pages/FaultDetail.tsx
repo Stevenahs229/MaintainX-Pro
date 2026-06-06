@@ -12,6 +12,11 @@ import { faultImage, faultImages } from '../lib/equipmentImages';
 
 const statusFlow: FaultStatus[] = ['submitted', 'analysis', 'inspection', 'validation', 'manufacturing', 'delivery', 'closed'];
 
+const statusIcons: Record<string, any> = {
+  submitted: Circle, analysis: Circle, inspection: Circle,
+  validation: Circle, manufacturing: Circle, delivery: Circle, closed: CheckCircle2,
+};
+
 export default function FaultDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -39,6 +44,7 @@ export default function FaultDetail() {
     const nextIdx = currentIndex + 1;
     if (nextIdx >= statusFlow.length) return;
     await api.faults.updateStatus(fault!.id, statusFlow[nextIdx]);
+    addToast(`Panne avancée vers ${STATUS_LABELS[statusFlow[nextIdx]]}`, 'success');
     refetch();
   }
 
@@ -47,13 +53,14 @@ export default function FaultDetail() {
     if (!comment.trim()) return;
     await api.faults.addComment(fault!.id, { content: comment });
     setComment('');
+    addToast('Commentaire ajouté', 'success');
     refetch();
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <button onClick={() => navigate('/kanban')} className="btn-ghost btn-sm">
-        <ArrowLeft className="w-4 h-4" /> Retour au Kanban
+    <div className="space-y-10 max-w-4xl animate-fade-in">
+      <button onClick={() => navigate('/kanban')} className="btn-ghost">
+        <ArrowLeft className="w-5 h-5" /> Retour au Kanban
       </button>
 
       <div className="card overflow-hidden p-0">
@@ -68,7 +75,7 @@ export default function FaultDetail() {
             <h1 className="text-xl font-semibold text-ink tracking-tight">{fault.title}</h1>
             <p className="text-sm text-ink-soft">{fault.equipment_name}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 shrink-0">
             <StatusBadge status={fault.priority} labels={PRIORITY_LABELS} />
             <StatusBadge status={fault.status} labels={STATUS_LABELS} />
           </div>
@@ -98,8 +105,8 @@ export default function FaultDetail() {
         </div>
 
         {currentIndex < statusFlow.length - 1 && (
-          <button onClick={advanceStatus} className="btn-primary mt-4">
-            Avancer au statut suivant : {STATUS_LABELS[statusFlow[currentIndex + 1]]}
+          <button onClick={advanceStatus} className="btn-primary mt-8 shadow-lg shadow-brand-500/20 text-lg px-8 py-4">
+            Avancer → {STATUS_LABELS[statusFlow[currentIndex + 1]]}
           </button>
         )}
         </div>
@@ -123,8 +130,8 @@ export default function FaultDetail() {
             <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
               <Package className="w-4 h-4 text-brand-600" /> Pièces détachées
             </h3>
-            <button onClick={() => setShowPartsModal(true)} className="btn-ghost btn-xs">
-              <Plus className="w-3 h-3" /> Ajouter
+            <button onClick={() => setShowPartsModal(true)} className="btn-ghost">
+              <Plus className="w-4 h-4" /> Ajouter
             </button>
           </div>
           {fault.spare_parts && fault.spare_parts.length > 0 ? (
@@ -135,9 +142,7 @@ export default function FaultDetail() {
                     <p className="text-sm font-medium text-ink">{p.name}</p>
                     <p className="text-xs text-ink-faint">{p.reference} x{p.quantity}</p>
                   </div>
-                  <StatusBadge status={p.status} labels={{
-                    pending: 'En attente', ordered: 'Commandé', received: 'Reçu', installed: 'Installé', cancelled: 'Annulé'
-                  }} />
+                  <StatusBadge status={p.status} labels={{ pending: 'En attente', ordered: 'Commandé', received: 'Reçu', installed: 'Installé', cancelled: 'Annulé' }} />
                 </div>
               ))}
             </div>
@@ -150,14 +155,9 @@ export default function FaultDetail() {
           <h3 className="text-sm font-semibold text-ink mb-4 flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-brand-600" /> Commentaires
           </h3>
-          <form onSubmit={handleAddComment} className="flex gap-2 mb-4">
-            <input
-              className="input flex-1"
-              placeholder="Ajouter un commentaire..."
-              value={comment}
-              onChange={e => setComment(e.target.value)}
-            />
-            <button type="submit" className="btn-primary btn-sm"><Send className="w-3 h-3" /></button>
+          <form onSubmit={handleAddComment} className="flex gap-3 mb-6">
+            <input className="input flex-1 text-base" placeholder="Ajouter un commentaire..." value={comment} onChange={e => setComment(e.target.value)} />
+            <button type="submit" className="btn-primary"><Send className="w-5 h-5" /></button>
           </form>
           <div className="space-y-2.5 max-h-60 overflow-y-auto">
             {fault.comments && fault.comments.length > 0 ? (
@@ -231,41 +231,21 @@ function InterventionReport({ faultId, report, onSaved }: { faultId: string; rep
 
 function PartsForm({ faultId, onDone }: { faultId: string; onDone: () => void }) {
   const [form, setForm] = useState({ name: '', reference: '', quantity: 1, unit_price: 0, supplier: '' });
-
+  const { addToast } = useToast();
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    try {
-      await api.spareParts.create({ ...form, fault_id: faultId });
-      onDone();
-    } catch (err: any) {
-      alert(err.message);
-    }
+    try { await api.spareParts.create({ ...form, fault_id: faultId }); addToast('Pièce ajoutée avec succès', 'success'); onDone(); }
+    catch (err: any) { addToast(err.message, 'error'); }
   }
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="label">Nom *</label>
-        <input className="input" required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div><label className="label">Nom</label><input className="input" required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+      <div><label className="label">Référence</label><input className="input" value={form.reference} onChange={e => setForm(f => ({ ...f, reference: e.target.value }))} /></div>
+      <div className="grid grid-cols-2 gap-5">
+        <div><label className="label">Quantité</label><input className="input" type="number" min={1} value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: +e.target.value }))} /></div>
+        <div><label className="label">Prix unitaire</label><input className="input" type="number" min={0} step={0.01} value={form.unit_price} onChange={e => setForm(f => ({ ...f, unit_price: +e.target.value }))} /></div>
       </div>
-      <div>
-        <label className="label">Référence</label>
-        <input className="input" value={form.reference} onChange={e => setForm(f => ({ ...f, reference: e.target.value }))} />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="label">Quantité</label>
-          <input className="input" type="number" min={1} value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: +e.target.value }))} />
-        </div>
-        <div>
-          <label className="label">Prix unitaire</label>
-          <input className="input" type="number" min={0} step={0.01} value={form.unit_price} onChange={e => setForm(f => ({ ...f, unit_price: +e.target.value }))} />
-        </div>
-      </div>
-      <div>
-        <label className="label">Fournisseur</label>
-        <input className="input" value={form.supplier} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} />
-      </div>
+      <div><label className="label">Fournisseur</label><input className="input" value={form.supplier} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} /></div>
       <button type="submit" className="btn-primary w-full">Ajouter la pièce</button>
     </form>
   );

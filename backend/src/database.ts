@@ -33,7 +33,16 @@ export async function initDb(): Promise<SqlJsDatabase> {
       name TEXT NOT NULL,
       email TEXT UNIQUE NOT NULL,
       role TEXT NOT NULL DEFAULT 'technician' CHECK(role IN ('admin','manager','technician')),
+      password_hash TEXT NOT NULL DEFAULT '',
       avatar TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      token TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);

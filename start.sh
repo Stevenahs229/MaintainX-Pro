@@ -1,49 +1,36 @@
 #!/usr/bin/env bash
-set -o pipefail
+set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BACKEND_PID=""
-FRONTEND_PID=""
 
 cleanup() {
   echo ""
-  echo "⏹️  Arrêt des serveurs..."
+  echo "Arrêt du serveur..."
   [ -n "$BACKEND_PID" ] && kill "$BACKEND_PID" 2>/dev/null
-  [ -n "$FRONTEND_PID" ] && kill "$FRONTEND_PID" 2>/dev/null
   wait 2>/dev/null
-  echo "✓ Arrêté"
+  echo "Arrêté"
   exit 0
 }
 trap cleanup SIGINT SIGTERM
 
-echo "🔧 MaintainX Pro — Démarrage..."
+echo "MaintainX Pro — Démarrage..."
 
-# Backend
-if [ ! -f "$PROJECT_DIR/backend/node_modules/.bin/tsx" ]; then
-  echo "📦 Installation des dépendances backend..."
-  cd "$PROJECT_DIR/backend" && npm install
-fi
-echo "📦 Démarrage du backend (port 3001)..."
+echo "Installation des dépendances..."
+cd "$PROJECT_DIR/frontend" && npm install --silent
+cd "$PROJECT_DIR/backend" && npm install --silent
+
+echo "Build du frontend..."
+cd "$PROJECT_DIR/frontend" && npx vite build --logLevel warn
+
+echo "Démarrage du backend (port 3001)..."
 cd "$PROJECT_DIR/backend"
-node_modules/.bin/tsx src/index.ts &
+npx tsx src/index.ts &
 BACKEND_PID=$!
 
-# Frontend
-if [ ! -f "$PROJECT_DIR/frontend/node_modules/.bin/vite" ]; then
-  echo "📦 Installation des dépendances frontend..."
-  cd "$PROJECT_DIR/frontend" && npm install
-fi
-echo "🎨 Démarrage du frontend (port 5173)..."
-cd "$PROJECT_DIR/frontend"
-node_modules/.bin/vite --host 0.0.0.0 --port 5173 &
-FRONTEND_PID=$!
-
 echo ""
-echo "✅ Projet lancé !"
-echo "   Frontend : http://localhost:5173"
-echo "   Backend  : http://localhost:3001"
-echo ""
-echo "   Ctrl+C pour tout arrêter"
+echo "Projet lancé sur http://localhost:3001"
+echo "Ctrl+C pour arrêter"
 echo ""
 
 wait

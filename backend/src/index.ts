@@ -1,3 +1,4 @@
+import path from 'path';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -49,6 +50,12 @@ if (staticDir) {
     res.sendFile(path.join(staticDir, 'index.html'));
   });
 }
+
+const frontendDist = path.resolve('../frontend/dist');
+app.use(express.static(frontendDist));
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(frontendDist, 'index.html'));
+});
 
 async function start() {
   await initDb();

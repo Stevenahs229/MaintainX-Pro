@@ -14,6 +14,8 @@ export default function EquipmentList() {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ name: '', category: '', description: '', location: '', technical_sheet: '' });
+  const [qrEquipment, setQrEquipment] = useState<string | null>(null);
+  const { addToast } = useToast();
   const navigate = useNavigate();
 
   const filtered = equipment?.filter(e =>
@@ -26,12 +28,11 @@ export default function EquipmentList() {
     e.preventDefault();
     try {
       await api.equipment.create(form);
+      addToast('Équipement créé avec succès', 'success');
       setShowModal(false);
       setForm({ name: '', category: '', description: '', location: '', technical_sheet: '' });
       refetch();
-    } catch (err: any) {
-      alert(err.message);
-    }
+    } catch (err: any) { addToast(err.message, 'error'); }
   }
 
   if (loading) return <LoadingSpinner />;
@@ -79,8 +80,8 @@ export default function EquipmentList() {
               <Heart className="w-3.5 h-3.5 text-red-500" />
               <div className="flex-1 h-1.5 rounded-full bg-zinc-200 overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all ${
-                    eq.health_score > 70 ? 'bg-green-500' : eq.health_score > 40 ? 'bg-amber-500' : 'bg-red-500'
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    eq.health_score > 70 ? 'bg-gradient-to-r from-green-500 to-emerald-400' : eq.health_score > 40 ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-gradient-to-r from-red-500 to-rose-400'
                   }`}
                   style={{ width: `${eq.health_score}%` }}
                 />
@@ -88,6 +89,7 @@ export default function EquipmentList() {
               <span className="text-xs font-medium text-ink-soft">{eq.health_score}%</span>
             </div>
             </div>
+          </div>
           </div>
         ))}
       </div>
@@ -100,27 +102,12 @@ export default function EquipmentList() {
       )}
 
       <Modal open={showModal} onClose={() => setShowModal(false)} title="Nouvel équipement">
-        <form onSubmit={handleCreate} className="space-y-4">
-          <div>
-            <label className="label">Nom *</label>
-            <input className="input" required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-          </div>
-          <div>
-            <label className="label">Catégorie *</label>
-            <input className="input" required value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} />
-          </div>
-          <div>
-            <label className="label">Description</label>
-            <textarea className="input" rows={3} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
-          </div>
-          <div>
-            <label className="label">Localisation</label>
-            <input className="input" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} />
-          </div>
-          <div>
-            <label className="label">Fiche technique</label>
-            <input className="input" value={form.technical_sheet} onChange={e => setForm(f => ({ ...f, technical_sheet: e.target.value }))} />
-          </div>
+        <form onSubmit={handleCreate} className="space-y-6">
+          <div><label className="label">Nom</label><input className="input" required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+          <div><label className="label">Catégorie</label><input className="input" required value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} /></div>
+          <div><label className="label">Description</label><textarea className="input" rows={3} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div>
+          <div><label className="label">Localisation</label><input className="input" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} /></div>
+          <div><label className="label">Fiche technique</label><input className="input" value={form.technical_sheet} onChange={e => setForm(f => ({ ...f, technical_sheet: e.target.value }))} /></div>
           <button type="submit" className="btn-primary w-full">Ajouter</button>
         </form>
       </Modal>

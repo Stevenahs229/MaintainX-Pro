@@ -26,9 +26,7 @@ export default function Notifications() {
 
   async function handleClick(a: any) {
     if (!a.read) await markRead(a.id);
-    if (a.related_type === 'fault' && a.related_id) {
-      navigate(`/faults/${a.related_id}`);
-    }
+    if (a.related_type === 'fault' && a.related_id) navigate(`/faults/${a.related_id}`);
   }
 
   return (
@@ -38,8 +36,8 @@ export default function Notifications() {
           {unread > 0 ? `${unread} notification${unread > 1 ? 's' : ''} non lue${unread > 1 ? 's' : ''}` : 'Tout est à jour'}
         </p>
         {unread > 0 && (
-          <button onClick={markAllRead} className="btn-secondary btn-sm">
-            <CheckCheck className="w-4 h-4" /> Tout marquer lu
+          <button onClick={markAllRead} className="btn-secondary shadow-lg">
+            <CheckCheck className="w-5 h-5" /> Tout marquer lu
           </button>
         )}
       </div>
@@ -51,7 +49,7 @@ export default function Notifications() {
             <p className="text-ink-soft">Aucune activité</p>
           </div>
         ) : (
-          activities.map(a => {
+          activities.map((a, i) => {
             const Icon = iconMap[a.type] || Bell;
             const color = colorMap[a.type] || 'text-ink-soft bg-zinc-100';
             return (
@@ -61,6 +59,7 @@ export default function Notifications() {
                 className={`card card-hover flex items-start gap-4 cursor-pointer ${
                   !a.read ? 'ring-1 ring-brand-200 bg-brand-50/40' : ''
                 }`}
+                style={{ animationDelay: `${i * 50}ms` }}
               >
                 <div className={`p-2.5 rounded-2xl ${color} shrink-0`}>
                   <Icon className="w-4 h-4" />
@@ -75,7 +74,12 @@ export default function Notifications() {
                     })}
                   </p>
                 </div>
-                {!a.read && <div className="w-2 h-2 rounded-full bg-brand-500 shrink-0 mt-2" />}
+                {!a.read && (
+                  <span className="relative flex h-3 w-3 shrink-0 mt-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-brand-500" />
+                  </span>
+                )}
               </div>
             );
           })

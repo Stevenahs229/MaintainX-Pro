@@ -1,4 +1,4 @@
-import { initDb, queryOne, execute } from './database.js';
+import { initDb, queryOne, execute, getDb } from './database.js';
 import { v4 as uuid } from 'uuid';
 import { hashPassword } from './lib/auth.js';
 import { catalogImagesForEquipment, catalogImagesForFault } from './lib/imageCatalog.js';
@@ -11,11 +11,13 @@ export async function seedIfEmpty(): Promise<void> {
     return;
   }
 
+  const hash = (pw: string) => hashPassword(pw);
+
   const users = [
-    { id: uuid(), name: 'Admin', email: 'admin@maintainx.com', role: 'admin' },
-    { id: uuid(), name: 'Sophie Martin', email: 'sophie@maintainx.com', role: 'manager' },
-    { id: uuid(), name: 'Thomas Dubois', email: 'thomas@maintainx.com', role: 'technician' },
-    { id: uuid(), name: 'Lucas Petit', email: 'lucas@maintainx.com', role: 'technician' },
+    { id: uuid(), name: 'Admin', email: 'admin@maintainx.com', role: 'admin', password_hash: hash('admin123') },
+    { id: uuid(), name: 'Sophie Martin', email: 'sophie@maintainx.com', role: 'manager', password_hash: hash('sophie123') },
+    { id: uuid(), name: 'Thomas Dubois', email: 'thomas@maintainx.com', role: 'technician', password_hash: hash('thomas123') },
+    { id: uuid(), name: 'Lucas Petit', email: 'lucas@maintainx.com', role: 'technician', password_hash: hash('lucas123') },
   ];
 
   const defaultHash = hashPassword('demo1234');

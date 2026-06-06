@@ -1,4 +1,3 @@
-import { useApi } from '../hooks/useApi';
 import { api } from '../services/api';
 import { DashboardData } from '../types';
 import { StatCard, LoadingSpinner, StatusBadge } from '../components/ui/Common';
@@ -50,8 +49,7 @@ const COLORS = ['#0071e3', '#5e5ce6', '#ff9f0a', '#30b0c7', '#ff375f', '#34c759'
 const TOOLTIP_STYLE = { background: '#ffffff', border: '1px solid #d2d2d7', borderRadius: 12, color: '#1d1d1f', boxShadow: '0 8px 24px -12px rgba(0,0,0,0.2)' };
 
 export default function Dashboard() {
-  const { data, loading } = useApi<DashboardData>(() => api.dashboard.get());
-  const [dynamicData, setDynamicData] = useState<any>(null);
+  const { data: d, loading } = useAutoRefresh<DashboardData>(() => api.dashboard.get(), 15000);
 
   useEffect(() => {
     if (data) setDynamicData(data);
@@ -93,12 +91,32 @@ export default function Dashboard() {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={d.faultsByPriority.map((p: any) => ({ ...p, label: ({ low: 'Faible', medium: 'Moyenne', high: 'Haute', critical: 'Critique' } as any)[p.priority] || p.priority }))} dataKey="count" nameKey="label" cx="50%" cy="50%" outerRadius={80} label={({ label, count }) => `${label}: ${count}`}>
-                  {d.faultsByPriority.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                <defs>
+                  {['#4D1BFF', '#8b5cf6', '#f59e0b', '#06b6d4'].map((c, i) => (
+                    <linearGradient key={i} id={`pieGrad${i}`} x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor={c} stopOpacity={1} />
+                      <stop offset="100%" stopColor={c} stopOpacity={0.6} />
+                    </linearGradient>
+                  ))}
+                </defs>
+                <Pie
+                  data={d.faultsByPriority.map((p: any) => ({ ...p, label: ({ low: 'Faible', medium: 'Moyenne', high: 'Haute', critical: 'Critique' } as any)[p.priority] || p.priority }))}
+                  dataKey="count" nameKey="label" cx="50%" cy="50%" innerRadius={65} outerRadius={105}
+                  paddingAngle={4} stroke="none" animationDuration={800}
+                >
+                  {d.faultsByPriority.map((_: any, i: number) => <Cell key={i} fill={`url(#pieGrad${i})`} />)}
                 </Pie>
                 <Tooltip contentStyle={TOOLTIP_STYLE} />
               </PieChart>
             </ResponsiveContainer>
+          </div>
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            {d.faultsByPriority.map((p: any, i: number) => (
+              <div key={p.priority} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card-30 border-subtle">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                <span className="text-sm text-muted font-medium">{p.count} {(p.priority === 'critical' ? 'critique' : p.priority === 'high' ? 'haute' : p.priority === 'medium' ? 'moyenne' : 'faible')}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -150,6 +168,7 @@ export default function Dashboard() {
               <p className="text-xs text-ink-soft mt-1">{c.category}</p>
             </div>
           ))}
+        </div>
         </div>
       </div>
     </div>

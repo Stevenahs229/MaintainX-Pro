@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react';
+
 export function StatCard({ title, value, icon: Icon, color, subtitle }: {
   title: string;
   value: string | number;
@@ -5,6 +7,33 @@ export function StatCard({ title, value, icon: Icon, color, subtitle }: {
   color: string;
   subtitle?: string;
 }) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  const numValue = typeof value === 'number' ? value : parseInt(value as string) || 0;
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    if (!ref.current || hasAnimated.current) return;
+    hasAnimated.current = true;
+    let start = 0;
+    const duration = 800;
+    const step = Math.ceil(numValue / (duration / 16));
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= numValue) { setDisplayValue(numValue); clearInterval(timer); }
+      else setDisplayValue(start);
+    }, 16);
+    return () => clearInterval(timer);
+  }, [numValue]);
+
+  const colors: Record<string, string> = {
+    'bg-brand-600/20 text-brand-400': 'from-brand-500/20 to-brand-600/10 border-brand-500/20 shadow-brand-500/10',
+    'bg-red-500/20 text-red-400': 'from-red-500/20 to-red-600/10 border-red-500/20 shadow-red-500/10',
+    'bg-green-500/20 text-green-400': 'from-green-500/20 to-green-600/10 border-green-500/20 shadow-green-500/10',
+    'bg-amber-500/20 text-amber-400': 'from-amber-500/20 to-amber-600/10 border-amber-500/20 shadow-amber-500/10',
+  };
+  const gradientClass = colors[color] || 'from-slate-500/20 to-slate-600/10';
+
   return (
     <div className="card card-hover flex items-start gap-4">
       <div className={`p-3 rounded-2xl ${color}`}>
@@ -67,6 +96,18 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
         </div>
         <div className="p-6">{children}</div>
       </div>
+    </div>
+  );
+}
+
+export function PageHeader({ title, description, action }: { title: string; description?: string; action?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between mb-10">
+      <div className="animate-slide-up">
+        <h1 className="text-3xl lg:text-4xl font-bold text-main tracking-tight">{title}</h1>
+        {description && <p className="text-base lg:text-lg text-muted mt-2">{description}</p>}
+      </div>
+      {action && <div className="animate-scale-in">{action}</div>}
     </div>
   );
 }
