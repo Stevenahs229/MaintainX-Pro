@@ -113,6 +113,19 @@ Le module `/scan` couvre l'exigence **« Capture visuelle »** du brief (option 
 
 Endpoints associés : `PATCH /api/faults/:id/images` et `PATCH /api/equipment/:id/images`.
 
+## Déploiement Netlify
+
+Le frontend et l'API Express tournent sur le même site Netlify (function serverless + redirects).
+
+1. Pousser le code sur GitHub (`main`)
+2. [app.netlify.com](https://app.netlify.com) → **Add new site** → **Import from Git** → repo `Ilop08/SIAI`
+3. Netlify lit `netlify.toml` automatiquement (build, publish, functions) — rien à configurer à la main
+4. Après le deploy, tester :
+   - `https://<votre-site>.netlify.app/api/health` → `{ "status": "ok" }`
+   - Login : `admin@maintainx.com` / `demo1234`
+
+**Limitation demo** : SQLite est stockée dans `/tmp` sur les Netlify Functions. Les données sont réinitialisées au cold start (le seed de démo se relance automatiquement).
+
 ## Innovation
 
 - **Pré-diagnostic visuel assisté** : analyse des scans → anomalie + pièces suggérées

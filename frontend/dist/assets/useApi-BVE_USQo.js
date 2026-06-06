@@ -1,1 +1,0 @@
-import{w as e,x as t}from"./index-CfZk5-mZ.js";var n=e(t(),1);function r(e){let[t,r]=(0,n.useState)(null),[i,a]=(0,n.useState)(!0),[o,s]=(0,n.useState)(null),c=(0,n.useCallback)(async()=>{a(!0),s(null);try{r(await e())}catch(e){s(e.message)}finally{a(!1)}},[]);return(0,n.useEffect)(()=>{c()},[]),{data:t,loading:i,error:o,refetch:c}}export{r as t};

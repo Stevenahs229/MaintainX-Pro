@@ -1,1 +1,0 @@
-var e={submitted:`Soumis`,analysis:`Analyse`,inspection:`Inspection`,validation:`Validation`,manufacturing:`Fabrication`,delivery:`Livraison`,closed:`Clôturé`},t={low:`Faible`,medium:`Moyenne`,high:`Haute`,critical:`Critique`};export{e as n,t};

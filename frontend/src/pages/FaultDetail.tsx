@@ -8,18 +8,15 @@ import { ArrowLeft, Send, Package, Plus, MessageSquare, Clock, Wrench, ScanLine,
 import ImageGallery from '../components/ui/ImageGallery';
 import CameraScanner from '../components/scan/CameraScanner';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../components/ui/Toast';
 import { faultImage, faultImages } from '../lib/equipmentImages';
 
 const statusFlow: FaultStatus[] = ['submitted', 'analysis', 'inspection', 'validation', 'manufacturing', 'delivery', 'closed'];
 
-const statusIcons: Record<string, any> = {
-  submitted: Circle, analysis: Circle, inspection: Circle,
-  validation: Circle, manufacturing: Circle, delivery: Circle, closed: CheckCircle2,
-};
-
 export default function FaultDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { addToast } = useToast();
   const { data: fault, loading, refetch } = useApi<Fault>(() => api.faults.get(id!));
   const [comment, setComment] = useState('');
   const [showPartsModal, setShowPartsModal] = useState(false);

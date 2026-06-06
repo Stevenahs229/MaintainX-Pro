@@ -8,8 +8,19 @@ import { Plus, Clock, Wrench, ScanLine } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CameraScanner from '../components/scan/CameraScanner';
 import { faultImage } from '../lib/equipmentImages';
+import { useToast } from '../components/ui/Toast';
 
 const columns: FaultStatus[] = ['submitted', 'analysis', 'inspection', 'validation', 'manufacturing', 'delivery', 'closed'];
+
+const columnColors: Record<FaultStatus, string> = {
+  submitted: 'border-t-blue-500',
+  analysis: 'border-t-purple-500',
+  inspection: 'border-t-amber-500',
+  validation: 'border-t-cyan-500',
+  manufacturing: 'border-t-orange-500',
+  delivery: 'border-t-indigo-500',
+  closed: 'border-t-green-500',
+};
 
 const columnGradients: Record<FaultStatus, string> = {
   submitted: 'from-blue-600/20 to-blue-950/20 border-blue-500/20',
@@ -35,6 +46,7 @@ export default function KanbanBoard() {
   const [showModal, setShowModal] = useState(false);
   const [, setUpdating] = useState(false);
   const navigate = useNavigate();
+  const { addToast } = useToast();
 
   useEffect(() => {
     if (!faults) return;

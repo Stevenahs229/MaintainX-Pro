@@ -7,6 +7,7 @@ import { Plus, Search, MapPin, Heart, Wrench } from 'lucide-react';
 import EquipmentThumb from '../components/ui/EquipmentThumb';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../components/ui/Toast';
 
 export default function EquipmentList() {
   const { data: equipment, loading, refetch } = useApi<Equipment[]>(() => api.equipment.list());
@@ -89,7 +90,6 @@ export default function EquipmentList() {
               <span className="text-xs font-medium text-ink-soft">{eq.health_score}%</span>
             </div>
             </div>
-          </div>
           </div>
         ))}
       </div>

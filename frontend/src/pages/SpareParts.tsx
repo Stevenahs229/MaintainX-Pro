@@ -5,6 +5,7 @@ import { SparePart } from '../types';
 import { LoadingSpinner, Modal, StatusBadge } from '../components/ui/Common';
 import { Package, Plus, Search, Truck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../components/ui/Toast';
 
 export default function SpareParts() {
   const { data: parts, loading, refetch } = useApi<SparePart[]>(() => api.spareParts.list());
@@ -110,7 +111,6 @@ export default function SpareParts() {
       <Modal open={showModal} onClose={() => setShowModal(false)} title="Nouvelle pièce détachée">
         <PartsForm onDone={() => { setShowModal(false); refetch(); }} />
       </Modal>
-      </div>
     </div>
   );
 }

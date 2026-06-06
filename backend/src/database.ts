@@ -7,7 +7,13 @@ import { hashPassword, isHashed } from './lib/auth.js';
 import { loadImageCatalog } from './lib/imageCatalog.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = process.env.MAINTAINX_DB_PATH || path.join(__dirname, '..', 'maintainx.db');
+const isServerless = Boolean(
+  process.env.VERCEL || process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME,
+);
+const defaultDbPath = isServerless
+  ? '/tmp/maintainx.db'
+  : path.join(__dirname, '..', 'maintainx.db');
+const dbPath = process.env.MAINTAINX_DB_PATH || defaultDbPath;
 const dbDir = path.dirname(dbPath);
 if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 
@@ -16,7 +22,11 @@ let db: SqlJsDatabase;
 export async function initDb(): Promise<SqlJsDatabase> {
   if (db) return db;
 
-  const SQL = await initSqlJs();
+  const SQL = await initSqlJs(
+    isServerless
+      ? { locateFile: (file) => `https://sql.js.org/dist/${file}` }
+      : undefined,
+  );
 
   if (fs.existsSync(dbPath)) {
     const buffer = fs.readFileSync(dbPath);

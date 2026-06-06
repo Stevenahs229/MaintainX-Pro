@@ -8,3 +8,5 @@ Thumbs.db
 *.tsbuildinfo
 backend/dist/
 backend/data/
+.vercel
+.netlify

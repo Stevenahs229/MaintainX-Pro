@@ -3,7 +3,6 @@ import { DashboardData } from '../types';
 import { StatCard, LoadingSpinner, StatusBadge } from '../components/ui/Common';
 import { AlertTriangle, Wrench, Package, Activity, CheckCircle, Heart, TrendingUp, ScanLine, Map, Kanban, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { faultImage, equipmentImage } from '../lib/equipmentImages';
@@ -45,19 +44,15 @@ function QuickActions() {
   );
 }
 
+import { useApi } from '../hooks/useApi';
+
 const COLORS = ['#0071e3', '#5e5ce6', '#ff9f0a', '#30b0c7', '#ff375f', '#34c759', '#af52de'];
 const TOOLTIP_STYLE = { background: '#ffffff', border: '1px solid #d2d2d7', borderRadius: 12, color: '#1d1d1f', boxShadow: '0 8px 24px -12px rgba(0,0,0,0.2)' };
 
 export default function Dashboard() {
-  const { data: d, loading } = useAutoRefresh<DashboardData>(() => api.dashboard.get(), 15000);
+  const { data: d, loading } = useApi<DashboardData>(() => api.dashboard.get());
 
-  useEffect(() => {
-    if (data) setDynamicData(data);
-  }, [data]);
-
-  if (loading && !dynamicData) return <LoadingSpinner />;
-
-  const d = dynamicData || data;
+  if (loading) return <LoadingSpinner />;
   if (!d) return <p className="text-ink-soft">Aucune donnée disponible.</p>;
 
   return (
@@ -168,7 +163,6 @@ export default function Dashboard() {
               <p className="text-xs text-ink-soft mt-1">{c.category}</p>
             </div>
           ))}
-        </div>
         </div>
       </div>
     </div>
