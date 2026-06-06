@@ -18,7 +18,15 @@ async function getHandler() {
 
 export const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
   context.callbackWaitsForEmptyEventLoop = false;
-  const fn = await getHandler();
-  const result = await fn(event, context);
-  return result as Awaited<ReturnType<Handler>>;
+  try {
+    const fn = await getHandler();
+    const result = await fn(event, context);
+    return result as Awaited<ReturnType<Handler>>;
+  } catch (err) {
+    console.error('API function error:', err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Internal server error' }),
+    };
+  }
 };

@@ -1,11 +1,11 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 import { bootstrap } from './bootstrap.js';
 import { createApp } from './app.js';
+import { backendDistDir } from './lib/paths.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const distDir = backendDistDir();
 const PORT = Number(process.env.PORT) || 3001;
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -14,8 +14,8 @@ async function start() {
   const app = createApp();
 
   const staticCandidates = [
-    path.join(__dirname, '../../frontend/dist'),
-    path.join(__dirname, '../../../frontend/dist'),
+    path.join(distDir, '../../frontend/dist'),
+    path.join(distDir, '../../../frontend/dist'),
   ];
   const staticDir = staticCandidates.find(p => fs.existsSync(path.join(p, 'index.html')));
 

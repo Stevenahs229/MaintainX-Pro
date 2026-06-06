@@ -8,7 +8,7 @@
 
 [functions]
   node_bundler = "esbuild"
-  included_files = ["backend/dist/data/**", "node_modules/sql.js/dist/**"]
+  included_files = ["backend/dist/**", "node_modules/sql.js/dist/**"]
   external_node_modules = ["sql.js"]
 
 [functions.api]

@@ -1,18 +1,17 @@
 import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { v4 as uuid } from 'uuid';
 import { hashPassword, isHashed } from './lib/auth.js';
 import { loadImageCatalog } from './lib/imageCatalog.js';
+import { backendDistDir } from './lib/paths.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isServerless = Boolean(
   process.env.VERCEL || process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME,
 );
 const defaultDbPath = isServerless
   ? '/tmp/maintainx.db'
-  : path.join(__dirname, '..', 'maintainx.db');
+  : path.join(backendDistDir(), '..', 'maintainx.db');
 const dbPath = process.env.MAINTAINX_DB_PATH || defaultDbPath;
 const dbDir = path.dirname(dbPath);
 if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });

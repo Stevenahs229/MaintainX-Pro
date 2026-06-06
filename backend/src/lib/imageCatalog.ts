@@ -1,8 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { backendDistDir } from './paths.js';
 
 export type ImageCatalog = {
   version: number;
@@ -14,9 +12,10 @@ export type ImageCatalog = {
 };
 
 export function loadImageCatalog(): ImageCatalog {
+  const distDir = backendDistDir();
   const candidates = [
-    path.join(__dirname, '../data/explicitImages.json'),
-    path.join(__dirname, '../../../frontend/src/data/explicitImages.json'),
+    path.join(distDir, 'data/explicitImages.json'),
+    path.join(process.cwd(), 'frontend/src/data/explicitImages.json'),
   ];
   for (const p of candidates) {
     if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf-8'));
