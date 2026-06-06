@@ -5,6 +5,7 @@ import { useAuth, ROLE_LABELS } from '../../context/AuthContext';
 import { navForRole } from '../../lib/navigation';
 import { useApi } from '../../hooks/useApi';
 import { api } from '../../services/api';
+import { ThemeToggle } from '../ui/ThemeToggle';
 
 const titles: Record<string, { title: string; subtitle: string }> = {
   '/admin/dashboard': { title: 'Centre de contrôle', subtitle: 'Vue temps réel plateforme' },
@@ -81,7 +82,7 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-canvas">
-      <aside className="hidden md:flex w-64 bg-white/70 backdrop-blur-2xl border-r border-line-soft flex-col shrink-0">
+      <aside className="hidden md:flex w-64 bg-surface/70 backdrop-blur-2xl border-r border-line-soft flex-col shrink-0">
         <div className="px-5 h-16 flex items-center border-b border-line-soft">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center shadow-apple-sm">
@@ -106,7 +107,7 @@ export default function Layout() {
                   `group flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all ${
                     isActive
                       ? item.accent ? 'bg-accent-50 text-accent-700' : 'bg-brand-50 text-brand-700'
-                      : 'text-ink-soft hover:text-ink hover:bg-black/[0.04]'
+                      : 'text-ink-soft hover:text-ink hover:bg-ink/[0.06]'
                   }`
                 }
               >
@@ -129,7 +130,7 @@ export default function Layout() {
 
         <div className="p-3 border-t border-line-soft">
           {user && (
-            <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-black/[0.04] transition-colors cursor-pointer" onClick={() => navigate('/profile')}>
+            <div className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-ink/[0.06] transition-colors cursor-pointer" onClick={() => navigate('/profile')}>
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-xs font-semibold text-white">
                 {initials(user.name)}
               </div>
@@ -146,12 +147,13 @@ export default function Layout() {
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="shrink-0 h-16 border-b border-line-soft bg-white/70 backdrop-blur-2xl flex items-center justify-between px-4 md:px-8">
+        <header className="shrink-0 h-16 border-b border-line-soft bg-surface/70 backdrop-blur-2xl flex items-center justify-between px-4 md:px-8">
           <div className="min-w-0">
             <h2 className="text-[17px] font-semibold text-ink truncate tracking-tight">{meta.title}</h2>
             {meta.subtitle && <p className="text-[12px] text-ink-faint truncate hidden sm:block">{meta.subtitle}</p>}
           </div>
           <div className="flex items-center gap-2.5">
+            <ThemeToggle compact />
             {can('admin:access') && adminDash?.onlineUsers && (
               <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200">
                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
@@ -178,7 +180,7 @@ export default function Layout() {
         </main>
       </div>
 
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/85 backdrop-blur-2xl border-t border-line-soft flex items-stretch justify-around px-1 pb-[env(safe-area-inset-bottom)]">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-surface/85 backdrop-blur-2xl border-t border-line-soft flex items-stretch justify-around px-1 pb-[env(safe-area-inset-bottom)]">
         {navItems.slice(0, user?.role === 'client' ? 4 : 5).map(item => (
           <NavLink
             key={item.to}

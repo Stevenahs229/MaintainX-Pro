@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -31,19 +32,19 @@ export default {
           800: '#125263',
           900: '#144554',
         },
-        canvas: '#f5f5f7',
+        canvas: 'rgb(var(--color-canvas) / <alpha-value>)',
         surface: {
-          DEFAULT: '#ffffff',
-          muted: '#f5f5f7',
+          DEFAULT: 'rgb(var(--color-surface) / <alpha-value>)',
+          muted: 'rgb(var(--color-surface-muted) / <alpha-value>)',
         },
         ink: {
-          DEFAULT: '#1d1d1f',
-          soft: '#6e6e73',
-          faint: '#86868b',
+          DEFAULT: 'rgb(var(--color-ink) / <alpha-value>)',
+          soft: 'rgb(var(--color-ink-soft) / <alpha-value>)',
+          faint: 'rgb(var(--color-ink-faint) / <alpha-value>)',
         },
         line: {
-          DEFAULT: '#d2d2d7',
-          soft: '#e8e8ed',
+          DEFAULT: 'rgb(var(--color-line) / <alpha-value>)',
+          soft: 'rgb(var(--color-line-soft) / <alpha-value>)',
         },
       },
       fontFamily: {

@@ -4,6 +4,59 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-canvas: 245 245 247;
+    --color-surface: 255 255 255;
+    --color-surface-muted: 245 245 247;
+    --color-ink: 29 29 31;
+    --color-ink-soft: 110 110 115;
+    --color-ink-faint: 134 134 139;
+    --color-line: 210 210 215;
+    --color-line-soft: 232 232 237;
+    --bg-page: 245 245 247;
+    --bg-card: 255 255 255;
+    --bg-card-hover: 250 250 252;
+    --bg-sidebar: 255 255 255;
+    --bg-input: 255 255 255;
+    --bg-hover: 29 29 31;
+    --bg-overlay: 0 0 0;
+    --modal-bg: 255 255 255;
+    --bg-brand-soft: 77 27 255;
+    --text-main: 29 29 31;
+    --text-muted: 110 110 115;
+    --text-dim: 134 134 139;
+    --text-subtle: 174 174 178;
+    --border-card: 232 232 237;
+    --border-subtle: 210 210 215;
+    --border-light: 210 210 215;
+  }
+
+  .dark {
+    --color-canvas: 15 15 18;
+    --color-surface: 28 28 30;
+    --color-surface-muted: 22 22 24;
+    --color-ink: 245 245 247;
+    --color-ink-soft: 174 174 178;
+    --color-ink-faint: 142 142 147;
+    --color-line: 58 58 60;
+    --color-line-soft: 44 44 46;
+    --bg-page: 15 15 18;
+    --bg-card: 28 28 30;
+    --bg-card-hover: 34 34 38;
+    --bg-sidebar: 22 22 24;
+    --bg-input: 28 28 30;
+    --bg-hover: 245 245 247;
+    --bg-overlay: 0 0 0;
+    --modal-bg: 28 28 30;
+    --text-main: 245 245 247;
+    --text-muted: 174 174 178;
+    --text-dim: 142 142 147;
+    --text-subtle: 110 110 115;
+    --border-card: 44 44 46;
+    --border-subtle: 58 58 60;
+    --border-light: 58 58 60;
+  }
+
   * { @apply border-line-soft; }
   html, body, #root { height: 100%; }
   body {
@@ -39,7 +92,7 @@
   .btn-accent { @apply btn bg-accent-500 text-white hover:bg-accent-400 active:bg-accent-600; }
   .btn-secondary { @apply btn bg-surface text-ink border border-line hover:bg-surface-muted; }
   .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-500; }
-  .btn-ghost { @apply btn text-ink-soft hover:text-ink hover:bg-black/[0.04]; }
+  .btn-ghost { @apply btn text-ink-soft hover:text-ink hover:bg-ink/[0.06]; }
   .btn-sm { @apply px-3 py-1.5 text-xs; }
   .btn-xs { @apply px-2.5 py-1 text-xs; }
 
@@ -74,6 +127,10 @@
     @apply navbar-link;
     color: #4D1BFF;
     background-color: rgba(77, 27, 255, 0.06);
+  }
+  .dark .navbar-link-active {
+    color: #9d8aff;
+    background-color: rgba(157, 138, 255, 0.12);
   }
   .navbar-link-active:hover {
     background-color: rgba(77, 27, 255, 0.1);
@@ -126,8 +183,33 @@
 .priority-medium { @apply text-amber-700 bg-amber-50 border-amber-200; }
 .priority-low { @apply text-green-700 bg-green-50 border-green-200; }
 
+.dark .priority-critical { @apply text-red-300 bg-red-950/50 border-red-800; }
+.dark .priority-high { @apply text-orange-300 bg-orange-950/50 border-orange-800; }
+.dark .priority-medium { @apply text-amber-300 bg-amber-950/50 border-amber-800; }
+.dark .priority-low { @apply text-green-300 bg-green-950/50 border-green-800; }
+
+/* Common light-only utilities → dark equivalents */
+.dark .bg-white { background-color: rgb(var(--color-surface)); }
+.dark .bg-white\/70 { background-color: rgb(var(--color-surface) / 0.7); }
+.dark .bg-white\/85 { background-color: rgb(var(--color-surface) / 0.85); }
+.dark .bg-red-50 { background-color: rgb(127 29 29 / 0.4); }
+.dark .bg-green-50 { background-color: rgb(20 83 45 / 0.4); }
+.dark .bg-brand-50 { background-color: rgb(0 38 77 / 0.4); }
+.dark .bg-accent-50 { background-color: rgb(20 69 84 / 0.4); }
+.dark .bg-orange-50 { background-color: rgb(124 45 18 / 0.4); }
+.dark .bg-amber-50 { background-color: rgb(120 53 15 / 0.4); }
+.dark .text-red-700 { @apply text-red-300; }
+.dark .text-green-700 { @apply text-green-300; }
+.dark .text-brand-700 { @apply text-brand-300; }
+.dark .text-accent-700 { @apply text-accent-300; }
+.dark .border-red-200 { @apply border-red-800; }
+.dark .border-green-200 { @apply border-green-800; }
+.dark .border-brand-200 { @apply border-brand-800; }
+
 /* Scrollbars — subtle, Apple-like */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 9999px; border: 2px solid transparent; background-clip: content-box; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.30); background-clip: content-box; }
+.dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); background-clip: content-box; }
+.dark ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.30); background-clip: content-box; }

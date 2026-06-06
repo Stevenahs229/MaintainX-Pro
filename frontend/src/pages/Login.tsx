@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Activity, Mail, Lock, User, Eye, EyeOff, Loader2, AlertCircle, ArrowRight } from 'lucide-react';
+import { Activity, Mail, Lock, User, Eye, EyeOff, Loader2, AlertCircle, ArrowRight, Info } from 'lucide-react';
+import { ThemeToggle } from '../components/ui/ThemeToggle';
 
 const DEMO_ACCOUNTS = [
   { email: 'admin@maintainx.com', label: 'Admin', role: 'Administrateur' },
@@ -61,6 +62,9 @@ export default function Login() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-canvas px-4 py-10 relative overflow-hidden">
+      <div className="absolute top-4 right-4 z-10">
+        <ThemeToggle compact />
+      </div>
       <div className="pointer-events-none absolute -top-32 right-0 h-96 w-96 rounded-full bg-brand-200/40 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-32 -left-10 h-96 w-96 rounded-full bg-accent-200/40 blur-3xl" />
 
@@ -167,6 +171,14 @@ export default function Login() {
                   <option value="manager">Manager</option>
                   <option value="client">Client</option>
                 </select>
+                <div className="mt-2 flex items-start gap-2 rounded-xl border border-line-soft bg-surface-muted px-3 py-2 text-[11px] text-ink-soft leading-relaxed">
+                  <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ink-faint" />
+                  <span>
+                    Inscription ouverte à tous. Les comptes <strong className="text-ink">Technicien</strong> et{' '}
+                    <strong className="text-ink">Manager</strong> sont actifs immédiatement. Les comptes{' '}
+                    <strong className="text-ink">Client</strong> nécessitent une validation administrateur.
+                  </span>
+                </div>
               </div>
             )}
 
