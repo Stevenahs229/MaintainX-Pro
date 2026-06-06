@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { queryAll, queryOne, execute } from '../database.js';
 import { v4 as uuid } from 'uuid';
+import { requireRole } from '../middleware/authGuard.js';
 
 const router = Router();
 
@@ -24,7 +25,7 @@ router.get('/:id', (req: Request, res: Response) => {
   res.json(part);
 });
 
-router.post('/', (req: Request, res: Response) => {
+router.post('/', requireRole('admin', 'manager'), (req: Request, res: Response) => {
   const { fault_id, name, reference, quantity, unit_price, supplier } = req.body;
   if (!name) return res.status(400).json({ error: 'Name required' });
 
@@ -45,7 +46,7 @@ router.post('/', (req: Request, res: Response) => {
   res.status(201).json(part);
 });
 
-router.patch('/:id/status', (req: Request, res: Response) => {
+router.patch('/:id/status', requireRole('admin', 'manager'), (req: Request, res: Response) => {
   const { status } = req.body;
   const validStatuses = ['pending', 'ordered', 'received', 'installed', 'cancelled'];
   if (!validStatuses.includes(status)) return res.status(400).json({ error: 'Invalid status' });

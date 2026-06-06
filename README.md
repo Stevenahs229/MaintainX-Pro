@@ -60,6 +60,7 @@ cd frontend  && node_modules/.bin/vite --host 0.0.0.0 # Port 5173
 | Route | Page | Fonctionnalité |
 |-------|------|---------------|
 | `/dashboard` | Dashboard | KPIs, graphiques, équipements à risque |
+| `/scan` | Capture visuelle | Scan guidé multi-angles via caméra + pré-diagnostic assisté |
 | `/kanban` | Kanban | Drag & drop des pannes dans le workflow |
 | `/equipment` | Équipements | CRUD + health score |
 | `/equipment/:id` | Détail équipement | Infos + historique pannes |
@@ -97,9 +98,25 @@ Le seed crée automatiquement :
 - 5 pannes à différents statuts
 - 3 pièces détachées en commande
 
+## Capture visuelle (module obligatoire)
+
+Le module `/scan` couvre l'exigence **« Capture visuelle »** du brief (option guidée) :
+
+- **Scan guidé multi-angles** : accès caméra via `getUserMedia` (PWA), réticule + ligne de
+  balayage, étapes guidées (face, profils, plaque signalétique, zone du défaut).
+- **Repli automatique** : import de photos (`<input capture>`) si la caméra est indisponible
+  ou non autorisée. La caméra nécessite un contexte sécurisé (`https://` ou `localhost`).
+- **Pré-diagnostic assisté** (innovation) : suggestion d'anomalie, gravité, pièces probables
+  et niveau de confiance à partir de l'état de l'équipement et de la couverture du scan.
+- **Preuves obligatoires** : la déclaration d'une panne exige au moins un cliché. Les images
+  sont aussi rattachées à la fiche équipement et consultables dans une galerie.
+
+Endpoints associés : `PATCH /api/faults/:id/images` et `PATCH /api/equipment/:id/images`.
+
 ## Innovation
 
+- **Pré-diagnostic visuel assisté** : analyse des scans → anomalie + pièces suggérées
 - **IA de diagnostic** : health score calculé par équipement
-- **PWA offline-ready** : cache API + Service Worker
+- **PWA offline-ready** : cache API (`/api`) + Service Worker
 - **Drag & drop** : workflow visuel inspiré de Trello
 - **Temps réel** : notifications mises à jour automatiquement

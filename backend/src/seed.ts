@@ -1,11 +1,13 @@
 import { initDb, queryOne, execute } from './database.js';
 import { v4 as uuid } from 'uuid';
+import { hashPassword } from './lib/auth.js';
+import { catalogImagesForEquipment, catalogImagesForFault } from './lib/imageCatalog.js';
 
-async function seed() {
+export async function seedIfEmpty(): Promise<void> {
   await initDb();
-  const existing = queryOne('SELECT COUNT(*) as count FROM users') as any;
-  if (existing.count > 0) {
-    console.log('Database already seeded.');
+  const admin = queryOne("SELECT id FROM users WHERE email = 'admin@maintainx.com'");
+  if (admin) {
+    console.log('Demo data already present.');
     return;
   }
 
@@ -16,8 +18,9 @@ async function seed() {
     { id: uuid(), name: 'Lucas Petit', email: 'lucas@maintainx.com', role: 'technician' },
   ];
 
+  const defaultHash = hashPassword('demo1234');
   for (const u of users) {
-    execute('INSERT INTO users (id, name, email, role) VALUES (?, ?, ?, ?)', [u.id, u.name, u.email, u.role]);
+    execute('INSERT INTO users (id, name, email, role, password) VALUES (?, ?, ?, ?, ?)', [u.id, u.name, u.email, u.role, defaultHash]);
   }
 
   const equipment = [
@@ -30,21 +33,21 @@ async function seed() {
   ];
 
   for (const e of equipment) {
-    execute('INSERT INTO equipment (id, name, category, description, location, status, health_score) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [e.id, e.name, e.category, e.description, e.location, e.status, e.health_score]);
+    execute('INSERT INTO equipment (id, name, category, description, location, status, health_score, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [e.id, e.name, e.category, e.description, e.location, e.status, e.health_score, catalogImagesForEquipment(e.name, e.category)]);
   }
 
   const faults = [
-    { id: uuid(), equipment_id: equipment[2].id, title: 'Bras articulé bloqué en position X', description: 'Le bras du robot reste bloqué en position X après un cycle de soudure. Code erreur E-47.', priority: 'critical', status: 'analysis', reported_by: users[3].id },
-    { id: uuid(), equipment_id: equipment[3].id, title: 'Fuite d\'huile compresseur', description: 'Fuite d\'huile détectée au niveau du joint SPI. Perte estimée 2L/jour.', priority: 'high', status: 'inspection', reported_by: users[2].id },
-    { id: uuid(), equipment_id: equipment[0].id, title: 'Vérin hydraulique défaillant', description: 'Le vérin principal montre des signes d\'usure avancée. Course irrégulière.', priority: 'high', status: 'submitted', reported_by: users[3].id },
-    { id: uuid(), equipment_id: equipment[4].id, title: 'Bruit anormal au démarrage', description: 'Bruit de frottement métallique lors du démarrage de la centrifugeuse.', priority: 'medium', status: 'validation', reported_by: users[2].id },
-    { id: uuid(), equipment_id: equipment[1].id, title: 'Rouleau convoyeur endommagé', description: 'Le rouleau d\'entraînement n°4 présente une usure anormale.', priority: 'low', status: 'closed', reported_by: users[2].id },
+    { id: uuid(), equipment_id: equipment[2].id, title: 'Bras articulé bloqué en position X', description: 'Le bras du robot reste bloqué en position X après un cycle de soudure. Code erreur E-47.', priority: 'critical', status: 'analysis', reported_by: users[3].id, equipment_name: equipment[2].name, equipment_category: equipment[2].category },
+    { id: uuid(), equipment_id: equipment[3].id, title: 'Fuite d\'huile compresseur', description: 'Fuite d\'huile détectée au niveau du joint SPI. Perte estimée 2L/jour.', priority: 'high', status: 'inspection', reported_by: users[2].id, equipment_name: equipment[3].name, equipment_category: equipment[3].category },
+    { id: uuid(), equipment_id: equipment[0].id, title: 'Vérin hydraulique défaillant', description: 'Le vérin principal montre des signes d\'usure avancée. Course irrégulière.', priority: 'high', status: 'submitted', reported_by: users[3].id, equipment_name: equipment[0].name, equipment_category: equipment[0].category },
+    { id: uuid(), equipment_id: equipment[4].id, title: 'Bruit anormal au démarrage', description: 'Bruit de frottement métallique lors du démarrage de la centrifugeuse.', priority: 'medium', status: 'validation', reported_by: users[2].id, equipment_name: equipment[4].name, equipment_category: equipment[4].category },
+    { id: uuid(), equipment_id: equipment[1].id, title: 'Rouleau convoyeur endommagé', description: 'Le rouleau d\'entraînement n°4 présente une usure anormale.', priority: 'low', status: 'closed', reported_by: users[2].id, equipment_name: equipment[1].name, equipment_category: equipment[1].category },
   ];
 
   for (const f of faults) {
     execute('INSERT INTO faults (id, equipment_id, title, description, priority, status, images, reported_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [f.id, f.equipment_id, f.title, f.description, f.priority, f.status, '[]', f.reported_by]);
+      [f.id, f.equipment_id, f.title, f.description, f.priority, f.status, catalogImagesForFault(f.title, f.description, f.equipment_name, f.equipment_category, f.priority), f.reported_by]);
   }
 
   const spareParts = [
@@ -69,7 +72,9 @@ async function seed() {
       [a.id, a.type, a.message, a.related_id, a.related_type, a.user_id]);
   }
 
-  console.log('Database seeded successfully!');
+  console.log('Demo data seeded.');
 }
 
-seed().catch(console.error);
+if (process.argv[1]?.includes('seed')) {
+  seedIfEmpty().catch(console.error);
+}

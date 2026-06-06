@@ -12,8 +12,8 @@ export default defineConfig({
         name: 'MaintainX Pro',
         short_name: 'MaintainX',
         description: 'Smart Industrial Maintenance Platform',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
+        theme_color: '#f5f5f7',
+        background_color: '#ffffff',
         display: 'standalone',
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
@@ -22,11 +22,17 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
           {
-            urlPattern: /^https?:\/\/localhost:3001\/api\/.*/i,
+            urlPattern: ({ url }) => url.pathname.startsWith('/api'),
             handler: 'NetworkFirst',
-            options: { cacheName: 'api-cache', expiration: { maxEntries: 100, maxAgeSeconds: 300 } },
+            options: {
+              cacheName: 'api-cache',
+              networkTimeoutSeconds: 4,
+              expiration: { maxEntries: 150, maxAgeSeconds: 600 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
           },
         ],
       },

@@ -3,9 +3,31 @@ import { queryAll, queryOne, execute } from '../database.js';
 
 const router = Router();
 
-router.get('/', (_req: Request, res: Response) => {
-  const activities = queryAll('SELECT * FROM activities ORDER BY created_at DESC LIMIT 50');
-  const unread = (queryOne('SELECT COUNT(*) as count FROM activities WHERE read = 0') as any)?.count || 0;
+router.get('/unread-count', (req: Request, res: Response) => {
+  const userId = req.auth?.sub;
+  const role = req.auth?.role;
+  let unread = 0;
+  if (role === 'admin') {
+    unread = (queryOne('SELECT COUNT(*) as count FROM activities WHERE read = 0') as any)?.count || 0;
+  } else {
+    unread = (queryOne('SELECT COUNT(*) as count FROM activities WHERE read = 0 AND (target_user_id = ? OR user_id = ?)', [userId, userId]) as any)?.count || 0;
+  }
+  res.json({ unread });
+});
+
+router.get('/', (req: Request, res: Response) => {
+  const userId = req.auth?.sub;
+  const role = req.auth?.role;
+  let activities;
+  if (role === 'admin') {
+    activities = queryAll('SELECT * FROM activities ORDER BY created_at DESC LIMIT 50');
+  } else {
+    activities = queryAll(
+      'SELECT * FROM activities WHERE target_user_id = ? OR user_id = ? ORDER BY created_at DESC LIMIT 50',
+      [userId, userId]
+    );
+  }
+  const unread = activities.filter((a: any) => !a.read).length;
   res.json({ activities, unread });
 });
 

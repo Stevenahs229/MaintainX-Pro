@@ -4,9 +4,12 @@ import { api } from '../services/api';
 import { SparePart } from '../types';
 import { LoadingSpinner, Modal, StatusBadge } from '../components/ui/Common';
 import { Package, Plus, Search, Truck } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function SpareParts() {
   const { data: parts, loading, refetch } = useApi<SparePart[]>(() => api.spareParts.list());
+  const { can } = useAuth();
+  const canManage = can('parts:manage');
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
 
@@ -25,72 +28,70 @@ export default function SpareParts() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Pièces détachées</h1>
-          <p className="text-sm text-slate-400 mt-1">Suivi des stocks et commandes</p>
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-faint" />
+          <input
+            type="text"
+            placeholder="Rechercher une pièce..."
+            className="input pl-10"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary">
-          <Plus className="w-4 h-4" /> Ajouter
-        </button>
+        {canManage && (
+          <button onClick={() => setShowModal(true)} className="btn-primary shrink-0">
+            <Plus className="w-4 h-4" /> Ajouter
+          </button>
+        )}
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-        <input
-          type="text"
-          placeholder="Rechercher une pièce..."
-          className="input pl-10"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-      </div>
-
-      <div className="card">
+      <div className="card p-0 overflow-hidden">
         {filtered.length === 0 ? (
           <div className="text-center py-12">
-            <Package className="w-12 h-12 text-slate-700 mx-auto mb-3" />
-            <p className="text-slate-400">Aucune pièce trouvée</p>
+            <Package className="w-12 h-12 text-zinc-300 mx-auto mb-3" />
+            <p className="text-ink-soft">Aucune pièce trouvée</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800">
-                  <th className="text-left py-3 px-4 text-slate-400 font-medium">Pièce</th>
-                  <th className="text-left py-3 px-4 text-slate-400 font-medium">Référence</th>
-                  <th className="text-left py-3 px-4 text-slate-400 font-medium">Qté</th>
-                  <th className="text-left py-3 px-4 text-slate-400 font-medium">Fournisseur</th>
-                  <th className="text-left py-3 px-4 text-slate-400 font-medium">Panne liée</th>
-                  <th className="text-left py-3 px-4 text-slate-400 font-medium">Statut</th>
-                  <th className="text-right py-3 px-4 text-slate-400 font-medium">Actions</th>
+                <tr className="border-b border-line-soft bg-surface-muted">
+                  <th className="text-left py-3 px-4 text-ink-faint font-medium">Pièce</th>
+                  <th className="text-left py-3 px-4 text-ink-faint font-medium">Référence</th>
+                  <th className="text-left py-3 px-4 text-ink-faint font-medium">Qté</th>
+                  <th className="text-left py-3 px-4 text-ink-faint font-medium">Fournisseur</th>
+                  <th className="text-left py-3 px-4 text-ink-faint font-medium">Panne liée</th>
+                  <th className="text-left py-3 px-4 text-ink-faint font-medium">Statut</th>
+                  <th className="text-right py-3 px-4 text-ink-faint font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(p => (
-                  <tr key={p.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
-                    <td className="py-3 px-4 text-white font-medium">{p.name}</td>
-                    <td className="py-3 px-4 text-slate-400">{p.reference || '-'}</td>
-                    <td className="py-3 px-4 text-slate-300">{p.quantity}</td>
-                    <td className="py-3 px-4 text-slate-400">{p.supplier || '-'}</td>
-                    <td className="py-3 px-4 text-slate-400">{p.fault_title || '-'}</td>
+                  <tr key={p.id} className="border-b border-line-soft last:border-0 hover:bg-surface-muted transition-colors">
+                    <td className="py-3 px-4 font-medium text-ink">{p.name}</td>
+                    <td className="py-3 px-4 text-ink-soft">{p.reference || '-'}</td>
+                    <td className="py-3 px-4 text-ink-soft">{p.quantity}</td>
+                    <td className="py-3 px-4 text-ink-soft">{p.supplier || '-'}</td>
+                    <td className="py-3 px-4 text-ink-soft">{p.fault_title || '-'}</td>
                     <td className="py-3 px-4">
                       <StatusBadge status={p.status} labels={{
                         pending: 'En attente', ordered: 'Commandé', received: 'Reçu', installed: 'Installé', cancelled: 'Annulé'
                       }} />
                     </td>
                     <td className="py-3 px-4 text-right">
-                      {p.status === 'pending' && (
+                      {!canManage && <span className="text-xs text-ink-faint">—</span>}
+                      {canManage && p.status === 'pending' && (
                         <button onClick={() => updateStatus(p.id, 'ordered')} className="btn-ghost btn-xs">
                           <Truck className="w-3 h-3" /> Commander
                         </button>
                       )}
-                      {p.status === 'ordered' && (
+                      {canManage && p.status === 'ordered' && (
                         <button onClick={() => updateStatus(p.id, 'received')} className="btn-ghost btn-xs">
                           Marquer reçu
                         </button>
                       )}
-                      {p.status === 'received' && (
+                      {canManage && p.status === 'received' && (
                         <button onClick={() => updateStatus(p.id, 'installed')} className="btn-ghost btn-xs">
                           Installé
                         </button>

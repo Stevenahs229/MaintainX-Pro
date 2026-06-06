@@ -17,8 +17,21 @@ export interface Equipment {
   status: 'active' | 'maintenance' | 'retired';
   health_score: number;
   last_maintenance?: string;
+  images?: string;
   created_at: string;
   updated_at: string;
+}
+
+/** Safely parse the JSON-encoded `images` column (faults & equipment). */
+export function parseImages(raw?: string | string[] | null): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 export interface Fault {
@@ -109,11 +122,11 @@ export const PRIORITY_LABELS: Record<string, string> = {
 };
 
 export const STATUS_COLORS: Record<FaultStatus, string> = {
-  submitted: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  analysis: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-  inspection: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  validation: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  manufacturing: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  delivery: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
-  closed: 'bg-green-500/20 text-green-400 border-green-500/30',
+  submitted: 'bg-blue-50 text-blue-700 border-blue-200',
+  analysis: 'bg-purple-50 text-purple-700 border-purple-200',
+  inspection: 'bg-amber-50 text-amber-700 border-amber-200',
+  validation: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+  manufacturing: 'bg-orange-50 text-orange-700 border-orange-200',
+  delivery: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  closed: 'bg-green-50 text-green-700 border-green-200',
 };
