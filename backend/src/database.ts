@@ -17,15 +17,24 @@ const dbPath = process.env.MAINTAINX_DB_PATH || defaultDbPath;
 const dbDir = path.dirname(dbPath);
 if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 
+function locateSqlJsWasm(file: string): string {
+  const candidates = [
+    path.join(process.cwd(), 'node_modules', 'sql.js', 'dist', file),
+    path.join('/var/task', 'node_modules', 'sql.js', 'dist', file),
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return `https://sql.js.org/dist/${file}`;
+}
+
 let db: SqlJsDatabase;
 
 export async function initDb(): Promise<SqlJsDatabase> {
   if (db) return db;
 
   const SQL = await initSqlJs(
-    isServerless
-      ? { locateFile: (file) => `https://sql.js.org/dist/${file}` }
-      : undefined,
+    isServerless ? { locateFile: locateSqlJsWasm } : undefined,
   );
 
   if (fs.existsSync(dbPath)) {
