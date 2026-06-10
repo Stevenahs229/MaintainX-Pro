@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AlertTriangle, ScanLine, ClipboardList, Wrench } from 'lucide-react';
 import EquipmentThumb from '../../components/ui/EquipmentThumb';
 import { faultImage, categoryImage } from '../../lib/equipmentImages';
+import SafeImage from '../../components/ui/SafeImage';
 
 const STATUS_HUMAN: Record<string, string> = {
   submitted: 'Demande reçue', analysis: 'En cours d\'analyse', inspection: 'En inspection',
@@ -34,7 +35,7 @@ export default function Portal() {
 
       {critical && (
         <div className="rounded-2xl border border-red-200 bg-red-50 overflow-hidden flex flex-col sm:flex-row">
-          <img src={faultImage(critical)} alt="" className="h-28 sm:h-auto sm:w-36 object-cover shrink-0" />
+          <SafeImage src={faultImage(critical)} alt="" className="h-28 sm:h-auto sm:w-36 object-cover shrink-0" />
           <div className="p-4 flex items-start gap-3 flex-1">
             <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
             <div>
@@ -67,7 +68,7 @@ export default function Portal() {
 
       {(equipment || []).length > 0 && (
         <div className="card overflow-hidden p-0">
-          <img src={categoryImage(equipment![0]?.category)} alt="" className="h-32 w-full object-cover" />
+          <SafeImage src={categoryImage(equipment![0]?.category)} alt="" className="h-32 w-full object-cover" />
           <div className="p-4">
             <h3 className="text-sm font-semibold text-ink mb-3">Votre parc ({equipment?.length} équipements)</h3>
             <div className="flex gap-2 overflow-x-auto pb-1">
@@ -87,7 +88,7 @@ export default function Portal() {
         <div className="space-y-2">
           {recent.map(f => (
             <Link key={f.id} to={`/faults/${f.id}`} className="flex items-center gap-3 p-3 rounded-xl bg-surface-muted hover:bg-brand-50 transition-colors">
-              <img src={faultImage(f)} alt="" className="h-12 w-12 rounded-xl object-cover shrink-0 bg-surface-muted" />
+              <SafeImage src={faultImage(f)} alt="" className="h-12 w-12 rounded-xl object-cover shrink-0 bg-surface-muted" />
               <p className="text-sm text-ink min-w-0">Votre panne <strong>{f.title}</strong> — {STATUS_HUMAN[f.status] || f.status}</p>
             </Link>
           ))}

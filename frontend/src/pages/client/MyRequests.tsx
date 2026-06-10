@@ -4,6 +4,7 @@ import { api } from '../../services/api';
 import { LoadingSpinner, StatusBadge } from '../../components/ui/Common';
 import { Link } from 'react-router-dom';
 import { faultImage } from '../../lib/equipmentImages';
+import SafeImage from '../../components/ui/SafeImage';
 
 const STEPS = ['submitted', 'analysis', 'inspection', 'validation', 'manufacturing', 'delivery', 'closed'];
 const STEP_LABELS: Record<string, string> = {
@@ -43,7 +44,7 @@ export default function MyRequests() {
           return (
             <div key={f.id} className="card overflow-hidden">
               <div className="flex gap-4">
-                <img src={faultImage(f)} alt="" className="h-24 w-24 sm:h-28 sm:w-28 object-cover rounded-xl shrink-0 bg-surface-muted" />
+                <SafeImage src={faultImage(f)} alt="" className="h-24 w-24 sm:h-28 sm:w-28 object-cover rounded-xl shrink-0 bg-surface-muted" />
                 <div className="flex-1 min-w-0">
               <div className="flex justify-between items-start mb-4">
                 <div>

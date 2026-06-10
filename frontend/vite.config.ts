@@ -7,7 +7,7 @@ export default defineConfig({
     react({ tsDecorators: false }),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
+      includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png', 'pictures/**/*'],
       manifest: {
         name: 'MaintainX Pro',
         short_name: 'MaintainX',
@@ -22,8 +22,18 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globIgnores: ['**/pictures/**'],
         navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/pictures/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'industrial-images',
+              expiration: { maxEntries: 24, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/api'),
             handler: 'NetworkFirst',

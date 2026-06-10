@@ -10,6 +10,7 @@ import ImageGallery from '../components/ui/ImageGallery';
 import CameraScanner from '../components/scan/CameraScanner';
 import { DEFAULT_ANGLES } from '../components/scan/CameraScanner';
 import { equipmentImages, faultImage } from '../lib/equipmentImages';
+import SafeImage from '../components/ui/SafeImage';
 
 const EQUIPMENT_ANGLES = DEFAULT_ANGLES.filter(a => a.key !== 'defect');
 
@@ -107,7 +108,7 @@ export default function EquipmentDetail() {
                 onClick={() => navigate(`/faults/${f.id}`)}
                 className="flex items-center gap-3 p-3 rounded-xl bg-surface-muted cursor-pointer hover:bg-zinc-100 transition-colors"
               >
-                <img src={faultImage(f)} alt="" className="h-10 w-10 rounded-lg object-cover shrink-0" />
+                <SafeImage src={faultImage(f)} alt="" className="h-10 w-10 rounded-lg object-cover shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-ink truncate">{f.title}</p>
                   <p className="text-xs text-ink-faint mt-0.5">{new Date(f.created_at).toLocaleDateString('fr-FR')}</p>

@@ -10,6 +10,7 @@ import CameraScanner from '../components/scan/CameraScanner';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/ui/Toast';
 import { faultImage, faultImages } from '../lib/equipmentImages';
+import SafeImage from '../components/ui/SafeImage';
 import { FAULT_STATUS_FLOW, faultStatusIndex, nextFaultStatus } from '../lib/faultWorkflow';
 
 const statusFlow: FaultStatus[] = FAULT_STATUS_FLOW;
@@ -66,7 +67,7 @@ export default function FaultDetail() {
       </button>
 
       <div className="card overflow-hidden p-0">
-        <img
+        <SafeImage
           src={galleryImages[0]}
           alt={fault.title}
           className="h-48 w-full object-cover"

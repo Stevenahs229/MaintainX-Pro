@@ -4,6 +4,7 @@ import { useApi } from '../../hooks/useApi';
 import { api } from '../../services/api';
 import { LoadingSpinner, StatusBadge } from '../../components/ui/Common';
 import { faultImage } from '../../lib/equipmentImages';
+import SafeImage from '../../components/ui/SafeImage';
 
 const STATUS_LABELS: Record<string, string> = {
   submitted: 'Soumis', analysis: 'Analyse', inspection: 'Inspection',
@@ -37,7 +38,7 @@ export default function MyTasks() {
         {list.length === 0 && <p className="text-sm text-ink-faint">Aucune intervention dans cette catégorie.</p>}
         {list.map(f => (
           <Link key={f.id} to={`/faults/${f.id}`} className="card card-hover flex items-center gap-4">
-            <img src={faultImage(f)} alt="" className="h-16 w-16 rounded-xl object-cover shrink-0 bg-surface-muted" />
+            <SafeImage src={faultImage(f)} alt="" className="h-16 w-16 rounded-xl object-cover shrink-0 bg-surface-muted" />
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-ink truncate">{f.title}</p>
               <p className="text-sm text-ink-soft">{f.equipment_name} · {f.company_name || 'Site'}</p>

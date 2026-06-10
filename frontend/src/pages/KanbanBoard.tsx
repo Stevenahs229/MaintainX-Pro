@@ -8,6 +8,7 @@ import { Plus, Clock, Wrench, ScanLine, GripVertical, ArrowRight, ExternalLink }
 import { useNavigate } from 'react-router-dom';
 import CameraScanner from '../components/scan/CameraScanner';
 import { faultImage } from '../lib/equipmentImages';
+import SafeImage from '../components/ui/SafeImage';
 import { useToast } from '../components/ui/Toast';
 import {
   FAULT_STATUS_FLOW,
@@ -172,7 +173,7 @@ export default function KanbanBoard() {
                                 Détail <ExternalLink className="h-3 w-3" />
                               </button>
                             </div>
-                            <img src={faultImage(fault)} alt="" className="h-20 w-full object-cover" draggable={false} />
+                            <SafeImage src={faultImage(fault)} alt="" className="h-20 w-full object-cover" draggable={false} />
                             <div className="p-4">
                             <div className="flex items-start justify-between mb-2">
                               <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${priorityIcon[fault.priority] || 'bg-zinc-400'}`} />

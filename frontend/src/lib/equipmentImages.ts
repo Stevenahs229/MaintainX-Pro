@@ -1,5 +1,6 @@
 import { parseImages } from '../types';
 import catalog from '../data/explicitImages.json';
+import { normalizeImageSrc } from '../components/ui/SafeImage';
 
 type Catalog = typeof catalog;
 
@@ -37,19 +38,19 @@ function imagesForFault(fault: {
 }
 
 export function categoryImage(category?: string): string {
-  return imagesForEquipment(undefined, category)[0];
+  return normalizeImageSrc(imagesForEquipment(undefined, category)[0]);
 }
 
 export function equipmentImage(equipment: { name?: string; category?: string; images?: string | null }): string {
-  const stored = parseImages(equipment.images);
+  const stored = parseImages(equipment.images).map(normalizeImageSrc);
   if (stored.length > 0) return stored[0];
-  return imagesForEquipment(equipment.name, equipment.category)[0];
+  return normalizeImageSrc(imagesForEquipment(equipment.name, equipment.category)[0]);
 }
 
 export function equipmentImages(equipment: { name?: string; category?: string; images?: string | null }): string[] {
-  const stored = parseImages(equipment.images);
+  const stored = parseImages(equipment.images).map(normalizeImageSrc);
   if (stored.length > 0) return stored;
-  return imagesForEquipment(equipment.name, equipment.category);
+  return imagesForEquipment(equipment.name, equipment.category).map(normalizeImageSrc);
 }
 
 export function faultImage(
@@ -63,17 +64,17 @@ export function faultImage(
   },
   index = 0,
 ): string {
-  const stored = parseImages(fault.images);
+  const stored = parseImages(fault.images).map(normalizeImageSrc);
   if (stored.length > index) return stored[index];
   if (stored.length > 0) return stored[0];
-  const pool = imagesForFault(fault);
+  const pool = imagesForFault(fault).map(normalizeImageSrc);
   return pool[index % pool.length];
 }
 
 export function faultImages(fault: Parameters<typeof faultImage>[0]): string[] {
-  const stored = parseImages(fault.images);
+  const stored = parseImages(fault.images).map(normalizeImageSrc);
   if (stored.length > 0) return stored;
-  return imagesForFault(fault);
+  return imagesForFault(fault).map(normalizeImageSrc);
 }
 
 /** Version du catalogue — utilisée côté backend pour re-migrer les images demo. */

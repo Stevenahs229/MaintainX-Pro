@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { faultImage, equipmentImage } from '../lib/equipmentImages';
+import SafeImage from '../components/ui/SafeImage';
 
 function QuickActions() {
   const navigate = useNavigate();
@@ -125,7 +126,7 @@ export default function Dashboard() {
             <div className="space-y-2.5">
               {d.lowHealthEquipment.map((e: any) => (
                 <div key={e.id} className="flex items-center gap-3 p-3 rounded-xl bg-surface-muted">
-                  <img src={equipmentImage(e)} alt="" className="h-10 w-10 rounded-lg object-cover shrink-0" />
+                  <SafeImage src={equipmentImage(e)} alt="" className="h-10 w-10 rounded-lg object-cover shrink-0" />
                   <span className="text-sm font-medium text-ink flex-1 truncate">{e.name}</span>
                   <span className={`badge border ${e.health_score < 40 ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                     {e.health_score}%
@@ -141,7 +142,7 @@ export default function Dashboard() {
           <div className="space-y-2.5">
             {d.recentFaults.map((f: any) => (
               <div key={f.id} className="flex items-start gap-3 p-3 rounded-xl bg-surface-muted">
-                <img src={faultImage(f)} alt="" className="h-10 w-10 rounded-lg object-cover shrink-0" />
+                <SafeImage src={faultImage(f)} alt="" className="h-10 w-10 rounded-lg object-cover shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-ink truncate">{f.title}</p>
                   <p className="text-xs text-ink-faint mt-0.5">{f.equipment_name}</p>
