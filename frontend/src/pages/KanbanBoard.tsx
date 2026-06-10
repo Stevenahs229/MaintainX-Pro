@@ -4,13 +4,19 @@ import { useApi } from '../hooks/useApi';
 import { api } from '../services/api';
 import { Fault, FaultStatus, STATUS_LABELS, PRIORITY_LABELS } from '../types';
 import { LoadingSpinner, Modal, StatusBadge } from '../components/ui/Common';
-import { Plus, Clock, Wrench, ScanLine } from 'lucide-react';
+import { Plus, Clock, Wrench, ScanLine, GripVertical, ArrowRight, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CameraScanner from '../components/scan/CameraScanner';
 import { faultImage } from '../lib/equipmentImages';
 import { useToast } from '../components/ui/Toast';
+import {
+  FAULT_STATUS_FLOW,
+  faultStatusIndex,
+  nextFaultStatus,
+  resolveKanbanDrop,
+} from '../lib/faultWorkflow';
 
-const columns: FaultStatus[] = ['submitted', 'analysis', 'inspection', 'validation', 'manufacturing', 'delivery', 'closed'];
+const columns: FaultStatus[] = FAULT_STATUS_FLOW;
 
 const columnColors: Record<FaultStatus, string> = {
   submitted: 'border-t-blue-500',
@@ -44,7 +50,7 @@ export default function KanbanBoard() {
   const { data: equipment } = useApi<any[]>(() => api.equipment.list());
   const [columnsData, setColumnsData] = useState<Record<string, Fault[]>>({});
   const [showModal, setShowModal] = useState(false);
-  const [, setUpdating] = useState(false);
+  const [advancingId, setAdvancingId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { addToast } = useToast();
 
@@ -55,25 +61,50 @@ export default function KanbanBoard() {
     setColumnsData(grouped);
   }, [faults]);
 
-  async function handleDragEnd(result: DropResult) {
-    if (!result.destination || result.destination.droppableId === result.source.droppableId) return;
-    const sourceCol = result.source.droppableId;
-    const destCol = result.destination.droppableId as FaultStatus;
-    const faultId = result.draggableId;
+  async function moveFault(fault: Fault, targetStatus: FaultStatus) {
+    const sourceCol = fault.status;
+    if (sourceCol === targetStatus) return;
 
+    setAdvancingId(fault.id);
     const newColumns = { ...columnsData };
     const sourceItems = [...(newColumns[sourceCol] || [])];
-    const destItems = [...(newColumns[destCol] || [])];
-    const [moved] = sourceItems.splice(result.source.index, 1);
-    if (!moved) return;
-    moved.status = destCol;
-    destItems.splice(result.destination.index, 0, moved);
+    const destItems = [...(newColumns[targetStatus] || [])];
+    const idx = sourceItems.findIndex(f => f.id === fault.id);
+    if (idx < 0) return;
+    const [moved] = sourceItems.splice(idx, 1);
+    moved.status = targetStatus;
+    destItems.unshift(moved);
     newColumns[sourceCol] = sourceItems;
-    newColumns[destCol] = destItems;
+    newColumns[targetStatus] = destItems;
     setColumnsData(newColumns);
 
-    try { await api.faults.updateStatus(faultId, destCol); addToast(`Panne déplacée vers ${STATUS_LABELS[destCol]}`, 'success'); }
-    catch { addToast('Erreur lors du déplacement', 'error'); refetch(); }
+    try {
+      await api.faults.updateStatus(fault.id, targetStatus);
+      addToast(`Panne passée à « ${STATUS_LABELS[targetStatus]} »`, 'success');
+      refetch();
+    } catch (err: any) {
+      addToast(err.message || 'Erreur lors du déplacement', 'error');
+      refetch();
+    } finally {
+      setAdvancingId(null);
+    }
+  }
+
+  async function handleDragEnd(result: DropResult) {
+    if (!result.destination || result.destination.droppableId === result.source.droppableId) return;
+    const sourceCol = result.source.droppableId as FaultStatus;
+    const requestedCol = result.destination.droppableId as FaultStatus;
+    const faultId = result.draggableId;
+    const fault = (columnsData[sourceCol] || []).find(f => f.id === faultId);
+    if (!fault) return;
+
+    const destCol = resolveKanbanDrop(sourceCol, requestedCol);
+    if (!destCol) return;
+
+    if (destCol !== requestedCol && faultStatusIndex(requestedCol) > faultStatusIndex(sourceCol)) {
+      addToast(`Étape suivante : ${STATUS_LABELS[destCol]}`, 'info');
+    }
+    await moveFault(fault, destCol);
   }
 
   if (loading) return <LoadingSpinner />;
@@ -81,7 +112,9 @@ export default function KanbanBoard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-ink-soft">Glissez-déposez les pannes pour faire avancer le workflow.</p>
+        <p className="text-sm text-ink-soft">
+          Avancez étape par étape (Soumis → … → Clôturé) via le bouton ou en glissant vers la colonne suivante.
+        </p>
         <button onClick={() => setShowModal(true)} className="btn-primary">
           <Plus className="w-4 h-4" /> Nouvelle panne
         </button>
@@ -109,18 +142,36 @@ export default function KanbanBoard() {
                     }`}
                     style={{ borderBottomLeftRadius: '1.125rem', borderBottomRightRadius: '1.125rem' }}
                   >
-                    {(columnsData[col] || []).map((fault, index) => (
+                    {(columnsData[col] || []).map((fault, index) => {
+                      const next = nextFaultStatus(fault.status);
+                      const busy = advancingId === fault.id;
+                      return (
                       <Draggable key={fault.id} draggableId={fault.id} index={index}>
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            onClick={() => navigate(`/faults/${fault.id}`)}
-                            className={`card p-0 overflow-hidden cursor-grab active:cursor-grabbing ${
+                            className={`card p-0 overflow-hidden ${
                               snapshot.isDragging ? 'shadow-apple-lg border-brand-300' : ''
                             }`}
                           >
+                            <div className="flex items-center justify-between px-2 py-1.5 border-b border-line-soft bg-surface-muted/80">
+                              <div
+                                {...provided.dragHandleProps}
+                                className="flex cursor-grab items-center gap-1 text-ink-faint active:cursor-grabbing"
+                                title="Glisser pour changer d'étape"
+                              >
+                                <GripVertical className="h-4 w-4" />
+                                <span className="text-[10px] font-medium">Déplacer</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/faults/${fault.id}`)}
+                                className="flex items-center gap-0.5 text-[10px] font-medium text-brand-600 hover:text-brand-700"
+                              >
+                                Détail <ExternalLink className="h-3 w-3" />
+                              </button>
+                            </div>
                             <img src={faultImage(fault)} alt="" className="h-20 w-full object-cover" draggable={false} />
                             <div className="p-4">
                             <div className="flex items-start justify-between mb-2">
@@ -140,11 +191,23 @@ export default function KanbanBoard() {
                               </span>
                               <div className={`w-2 h-2 rounded-full ${fault.priority === 'critical' ? 'bg-red-500 animate-pulse' : fault.priority === 'high' ? 'bg-orange-500' : fault.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}`} />
                             </div>
+                            {next ? (
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() => moveFault(fault, next)}
+                                className="btn-primary btn-xs w-full mt-3"
+                              >
+                                {busy ? 'En cours…' : <>Avancer <ArrowRight className="h-3 w-3" /> {STATUS_LABELS[next]}</>}
+                              </button>
+                            ) : (
+                              <p className="mt-3 text-center text-[10px] font-medium text-green-600">Clôturée</p>
+                            )}
                             </div>
                           </div>
                         )}
                       </Draggable>
-                    ))}
+                    );})}
                     {provided.placeholder}
                     {(columnsData[col] || []).length === 0 && (
                       <p className="text-xs text-ink-faint text-center py-8">Aucune panne</p>

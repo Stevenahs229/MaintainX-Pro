@@ -122,10 +122,17 @@ router.patch('/:id/status', (req: Request, res: Response) => {
   if (!existing) return res.status(404).json({ error: 'Fault not found' });
 
   const role = req.auth?.role;
-  if (role === 'technician' && existing.assigned_to !== req.auth?.sub) {
-    return res.status(403).json({ error: 'Panne non assignée à vous' });
-  }
   if (role === 'client') return res.status(403).json({ error: 'Accès refusé' });
+  if (role === 'technician') {
+    const uid = req.auth?.sub;
+    const canUpdate =
+      !existing.assigned_to ||
+      existing.assigned_to === uid ||
+      existing.reported_by === uid;
+    if (!canUpdate) {
+      return res.status(403).json({ error: 'Panne non assignée à vous — demandez à un manager' });
+    }
+  }
 
   execute("UPDATE faults SET status = ?, updated_at = datetime('now') WHERE id = ?", [status, req.params.id]);
 

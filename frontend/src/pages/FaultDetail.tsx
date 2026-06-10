@@ -10,8 +10,9 @@ import CameraScanner from '../components/scan/CameraScanner';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/ui/Toast';
 import { faultImage, faultImages } from '../lib/equipmentImages';
+import { FAULT_STATUS_FLOW, faultStatusIndex, nextFaultStatus } from '../lib/faultWorkflow';
 
-const statusFlow: FaultStatus[] = ['submitted', 'analysis', 'inspection', 'validation', 'manufacturing', 'delivery', 'closed'];
+const statusFlow: FaultStatus[] = FAULT_STATUS_FLOW;
 
 export default function FaultDetail() {
   const { id } = useParams<{ id: string }>();
@@ -26,7 +27,8 @@ export default function FaultDetail() {
   if (loading) return <LoadingSpinner />;
   if (!fault) return <p className="text-ink-soft">Panne introuvable.</p>;
 
-  const currentIndex = statusFlow.indexOf(fault.status);
+  const currentIndex = faultStatusIndex(fault.status);
+  const nextStatus = nextFaultStatus(fault.status);
   const images = parseImages(fault.images);
   const galleryImages = images.length > 0 ? images : faultImages(fault);
 
@@ -38,11 +40,14 @@ export default function FaultDetail() {
   }
 
   async function advanceStatus() {
-    const nextIdx = currentIndex + 1;
-    if (nextIdx >= statusFlow.length) return;
-    await api.faults.updateStatus(fault!.id, statusFlow[nextIdx]);
-    addToast(`Panne avancée vers ${STATUS_LABELS[statusFlow[nextIdx]]}`, 'success');
-    refetch();
+    if (!nextStatus) return;
+    try {
+      await api.faults.updateStatus(fault!.id, nextStatus);
+      addToast(`Panne avancée vers ${STATUS_LABELS[nextStatus]}`, 'success');
+      refetch();
+    } catch (err: any) {
+      addToast(err.message || 'Impossible d\'avancer la panne', 'error');
+    }
   }
 
   async function handleAddComment(e: React.FormEvent) {
@@ -101,10 +106,13 @@ export default function FaultDetail() {
           </div>
         </div>
 
-        {currentIndex < statusFlow.length - 1 && (
+        {nextStatus && (
           <button onClick={advanceStatus} className="btn-primary mt-8 shadow-lg shadow-brand-500/20 text-lg px-8 py-4">
-            Avancer → {STATUS_LABELS[statusFlow[currentIndex + 1]]}
+            Avancer → {STATUS_LABELS[nextStatus]}
           </button>
+        )}
+        {fault.status === 'closed' && (
+          <p className="mt-6 text-sm font-medium text-green-600">Panne clôturée — workflow terminé.</p>
         )}
         </div>
       </div>
