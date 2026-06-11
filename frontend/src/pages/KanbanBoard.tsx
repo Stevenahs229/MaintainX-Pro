@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import CameraScanner from '../components/scan/CameraScanner';
 import { faultImage } from '../lib/equipmentImages';
 import SafeImage from '../components/ui/SafeImage';
+import { compressScanImages } from '../lib/imageData';
 import { useToast } from '../components/ui/Toast';
 import {
   FAULT_STATUS_FLOW,
@@ -242,7 +243,8 @@ function FaultForm({ onDone, equipment }: { onDone: () => void; equipment: any[]
     }
     setSubmitting(true);
     try {
-      await api.faults.create({ ...form, images });
+      const compressed = await compressScanImages(images);
+      await api.faults.create({ ...form, images: compressed });
       onDone();
     } catch (err: any) {
       alert(err.message);

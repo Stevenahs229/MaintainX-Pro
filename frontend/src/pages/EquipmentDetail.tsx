@@ -11,6 +11,7 @@ import CameraScanner from '../components/scan/CameraScanner';
 import { DEFAULT_ANGLES } from '../components/scan/CameraScanner';
 import { equipmentImages, faultImage } from '../lib/equipmentImages';
 import SafeImage from '../components/ui/SafeImage';
+import { compressScanImages } from '../lib/imageData';
 
 const EQUIPMENT_ANGLES = DEFAULT_ANGLES.filter(a => a.key !== 'defect');
 
@@ -30,7 +31,8 @@ export default function EquipmentDetail() {
   async function handleAddImages(imgs: string[]) {
     setShowScan(false);
     if (!imgs.length) return;
-    await api.equipment.addImages(equipment!.id, imgs);
+    const compressed = await compressScanImages(imgs);
+    await api.equipment.addImages(equipment!.id, compressed);
     refetch();
   }
 

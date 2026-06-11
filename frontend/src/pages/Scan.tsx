@@ -6,6 +6,7 @@ import { Equipment, PRIORITY_LABELS } from '../types';
 import { LoadingSpinner, StatusBadge } from '../components/ui/Common';
 import CameraScanner from '../components/scan/CameraScanner';
 import { runDiagnostic, DiagnosticResult } from '../lib/diagnostic';
+import { compressScanImages } from '../lib/imageData';
 import {
   ScanLine, Wrench, Search, Camera, Sparkles, CheckCircle2, ChevronLeft,
   ArrowRight, Loader2, Cpu, MapPin,
@@ -66,16 +67,22 @@ export default function Scan() {
   async function submitFault(e: React.FormEvent) {
     e.preventDefault();
     if (!selected) return;
+    if (!images.length) {
+      alert('Au moins une photo est requise. Reprenez le scan.');
+      setStep('capture');
+      return;
+    }
     setSubmitting(true);
     try {
+      const compressed = await compressScanImages(images);
       const fault = await api.faults.create({
         equipment_id: selected.id,
         title: form.title,
         description: form.description,
         priority: form.priority,
-        images,
+        images: compressed,
       });
-      api.equipment.addImages(selected.id, images).catch(() => {});
+      api.equipment.addImages(selected.id, compressed).catch(() => {});
       setCreatedId(fault.id);
       setStep('done');
     } catch (err: any) {

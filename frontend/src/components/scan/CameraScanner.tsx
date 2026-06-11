@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   Camera, RefreshCw, Check, X, Upload, AlertCircle, ScanLine, ImageOff, ChevronRight, RotateCcw,
 } from 'lucide-react';
+import { SCAN_JPEG_QUALITY, SCAN_MAX_WIDTH } from '../../lib/imageData';
 
 export interface ScanAngle {
   key: string;
@@ -25,18 +26,15 @@ interface Props {
   minShots?: number;
 }
 
-const MAX_WIDTH = 1080;
-const JPEG_QUALITY = 0.7;
-
 function downscaleToDataURL(source: CanvasImageSource, sw: number, sh: number): string {
-  const scale = Math.min(1, MAX_WIDTH / sw);
+  const scale = Math.min(1, SCAN_MAX_WIDTH / sw);
   const canvas = document.createElement('canvas');
   canvas.width = Math.max(1, Math.round(sw * scale));
   canvas.height = Math.max(1, Math.round(sh * scale));
   const ctx = canvas.getContext('2d');
   if (!ctx) return '';
   ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL('image/jpeg', JPEG_QUALITY);
+  return canvas.toDataURL('image/jpeg', SCAN_JPEG_QUALITY);
 }
 
 function fileToDataURL(file: File): Promise<string> {
@@ -53,10 +51,32 @@ function fileToDataURL(file: File): Promise<string> {
   });
 }
 
+async function openCameraStream(): Promise<MediaStream> {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error('NO_CAMERA_API');
+  }
+  const attempts: MediaStreamConstraints[] = [
+    { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
+    { video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
+    { video: { width: { ideal: 1280 } }, audio: false },
+    { video: true, audio: false },
+  ];
+  let lastError: unknown;
+  for (const constraints of attempts) {
+    try {
+      return await navigator.mediaDevices.getUserMedia(constraints);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError;
+}
+
 export default function CameraScanner({ angles = DEFAULT_ANGLES, onComplete, onCancel, minShots = 1 }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [ready, setReady] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
   const [fallback, setFallback] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState(0);
@@ -66,34 +86,49 @@ export default function CameraScanner({ angles = DEFAULT_ANGLES, onComplete, onC
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
+    setReady(false);
+    setVideoReady(false);
+    if (videoRef.current) videoRef.current.srcObject = null;
+  }, []);
+
+  const bindStreamToVideo = useCallback(async () => {
+    const video = videoRef.current;
+    const stream = streamRef.current;
+    if (!video || !stream) return;
+    video.srcObject = stream;
+    try {
+      await video.play();
+    } catch {
+      /* autoplay policies — user can still capture after interaction */
+    }
   }, []);
 
   const startCamera = useCallback(async () => {
     setError(null);
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setFallback(true);
-      return;
-    }
+    stopCamera();
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } },
-        audio: false,
-      });
+      const stream = await openCameraStream();
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch(() => {});
-      }
-      setReady(true);
       setFallback(false);
+      setReady(true);
+      await bindStreamToVideo();
     } catch (err: any) {
-      const name = err?.name || '';
-      if (name === 'NotAllowedError') setError("Accès caméra refusé. Autorisez la caméra ou importez des photos.");
-      else if (name === 'NotFoundError') setError('Aucune caméra détectée sur cet appareil.');
-      else setError('Caméra indisponible. Vous pouvez importer des photos.');
+      const name = err?.name || err?.message || '';
+      if (name === 'NO_CAMERA_API') {
+        setError('Navigateur incompatible avec la caméra. Importez des photos.');
+      } else if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+        setError("Accès caméra refusé. Autorisez la caméra ou importez des photos.");
+      } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+        setError('Aucune caméra détectée sur cet appareil.');
+      } else if (name === 'NotReadableError') {
+        setError('Caméra déjà utilisée par une autre application.');
+      } else {
+        setError('Caméra indisponible. Vous pouvez importer des photos.');
+      }
       setFallback(true);
+      setReady(false);
     }
-  }, []);
+  }, [bindStreamToVideo, stopCamera]);
 
   useEffect(() => {
     startCamera();
@@ -107,22 +142,26 @@ export default function CameraScanner({ angles = DEFAULT_ANGLES, onComplete, onC
 
   function capture() {
     const video = videoRef.current;
-    if (!video || !video.videoWidth) return;
+    if (!video || !video.videoWidth || !video.videoHeight) {
+      setError('La caméra n\'est pas encore prête — patientez une seconde ou réessayez.');
+      return;
+    }
     const dataUrl = downscaleToDataURL(video, video.videoWidth, video.videoHeight);
     if (!dataUrl) return;
+    setError(null);
     setFlash(true);
     setTimeout(() => setFlash(false), 180);
     setShots(prev => {
       const next = [...prev];
       next[activeStep] = dataUrl;
+      const nextEmpty = next.findIndex((s, i) => i > activeStep && !s);
+      if (nextEmpty !== -1) setActiveStep(nextEmpty);
+      else {
+        const firstEmpty = next.findIndex((s, i) => i !== activeStep && !s);
+        if (firstEmpty !== -1) setActiveStep(firstEmpty);
+      }
       return next;
     });
-    const nextEmpty = shots.findIndex((s, i) => i > activeStep && !s);
-    if (nextEmpty !== -1) setActiveStep(nextEmpty);
-    else {
-      const firstEmpty = shots.findIndex((s, i) => i !== activeStep && !s);
-      if (firstEmpty !== -1) setActiveStep(firstEmpty);
-    }
   }
 
   async function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
@@ -141,6 +180,7 @@ export default function CameraScanner({ angles = DEFAULT_ANGLES, onComplete, onC
         }
         return next;
       });
+      setError(null);
     } catch {
       setError('Impossible de lire une des images.');
     } finally {
@@ -162,12 +202,17 @@ export default function CameraScanner({ angles = DEFAULT_ANGLES, onComplete, onC
 
   return (
     <div className="space-y-4">
-      {/* Viewport */}
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-black border border-line">
         {!fallback ? (
           <>
-            <video ref={videoRef} playsInline muted className="absolute inset-0 h-full w-full object-cover" />
-            {/* Guide overlay */}
+            <video
+              ref={videoRef}
+              playsInline
+              muted
+              autoPlay
+              className="absolute inset-0 h-full w-full object-cover"
+              onLoadedMetadata={() => setVideoReady(true)}
+            />
             <div className="pointer-events-none absolute inset-0">
               <div className="absolute inset-6 rounded-xl border-2 border-white/30" />
               <div className="absolute left-6 top-6 h-6 w-6 border-l-2 border-t-2 border-accent-400 rounded-tl-lg" />
@@ -178,12 +223,11 @@ export default function CameraScanner({ angles = DEFAULT_ANGLES, onComplete, onC
                 <div className="absolute inset-x-0 h-0.5 bg-accent-400/70 shadow-[0_0_12px_2px_rgba(34,211,238,0.6)] animate-scan-line" />
               </div>
             </div>
-            {/* Step badge */}
             <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-black/55 backdrop-blur px-3 py-1.5">
               <ScanLine className="h-3.5 w-3.5 text-accent-400" />
               <span className="text-xs font-medium text-white">{step?.label}</span>
             </div>
-            {!ready && !error && (
+            {(!ready || !videoReady) && !error && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 text-zinc-200">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent-500/30 border-t-accent-500" />
                 <p className="text-sm">Initialisation de la caméra…</p>
@@ -204,13 +248,12 @@ export default function CameraScanner({ angles = DEFAULT_ANGLES, onComplete, onC
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+        <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Current step hint */}
       {!fallback && step && (
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-line-soft bg-surface-muted px-4 py-3">
           <div className="min-w-0">
@@ -221,7 +264,6 @@ export default function CameraScanner({ angles = DEFAULT_ANGLES, onComplete, onC
         </div>
       )}
 
-      {/* Thumbnails / steps */}
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
         {angles.map((a, i) => (
           <button
@@ -250,10 +292,14 @@ export default function CameraScanner({ angles = DEFAULT_ANGLES, onComplete, onC
         ))}
       </div>
 
-      {/* Actions */}
       <div className="flex flex-wrap items-center gap-2">
         {!fallback && (
-          <button type="button" onClick={capture} disabled={!ready} className="btn-accent flex-1 min-w-[140px]">
+          <button
+            type="button"
+            onClick={capture}
+            disabled={!ready || !videoReady}
+            className="btn-accent flex-1 min-w-[140px]"
+          >
             <Camera className="h-4 w-4" /> {shots[activeStep] ? 'Reprendre cette vue' : 'Capturer'}
           </button>
         )}

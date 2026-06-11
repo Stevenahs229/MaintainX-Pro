@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/ui/Toast';
 import { faultImage, faultImages } from '../lib/equipmentImages';
 import SafeImage from '../components/ui/SafeImage';
+import { compressScanImages } from '../lib/imageData';
 import { FAULT_STATUS_FLOW, faultStatusIndex, nextFaultStatus } from '../lib/faultWorkflow';
 
 const statusFlow: FaultStatus[] = FAULT_STATUS_FLOW;
@@ -36,7 +37,8 @@ export default function FaultDetail() {
   async function handleAddImages(imgs: string[]) {
     setShowScan(false);
     if (!imgs.length) return;
-    await api.faults.addImages(fault!.id, imgs);
+    const compressed = await compressScanImages(imgs);
+    await api.faults.addImages(fault!.id, compressed);
     refetch();
   }
 
